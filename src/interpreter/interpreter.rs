@@ -27,6 +27,7 @@ impl Interpreter {
                 operator,
                 right,
             } => self.eval_binary(left, operator, right),
+            Expr::Group { expr } => self.eval_expression(expr),
             _ => Err(InterpreterError::UnexpectedExpr),
         }
     }

@@ -1,8 +1,8 @@
+use crate::errors::parse_error::ParseError;
 use crate::{
     lexer::token::{Token, TokenKind},
     parser::expression::Expr,
 };
-use crate::errors::parse_error::ParseError;
 
 #[derive(Debug, Clone)]
 pub struct Parser {
@@ -54,8 +54,7 @@ impl Parser {
 
         while let Some(op) = self.peek() {
             match op.kind {
-                TokenKind::LESS | TokenKind::GREAT |
-                TokenKind::LESS_EQ | TokenKind::GREAT_EQ => {
+                TokenKind::LESS | TokenKind::GREAT | TokenKind::LESS_EQ | TokenKind::GREAT_EQ => {
                     let op = self.advance().unwrap().clone();
                     let right = self.term()?;
                     expr = Expr::Binary {
@@ -130,6 +129,16 @@ impl Parser {
         match self.advance() {
             Some(tok) => match tok.kind {
                 TokenKind::INT(_) | TokenKind::FLOAT(_) => Ok(Expr::Literal(tok.clone())),
+                TokenKind::OPEN_BRACE => {
+                    let expr = self.expression()?;
+
+                    match self.consume(TokenKind::CLOSE_BRACE, "Expect ')' after an expression") {
+                        Some(err) => Err(err),
+                        None => Ok(Expr::Group {
+                            expr: Box::new(expr),
+                        }),
+                    }
+                }
                 _ => Err(ParseError::UnexpectedToken {
                     token: tok.to_string(),
                     line: tok.span.line,
@@ -143,8 +152,7 @@ impl Parser {
     //---------------------------------------------------------------
 
     fn is_empty(&self) -> bool {
-        self.current >= self.tokens.len()
-            || self.tokens[self.current].kind == TokenKind::EOF
+        self.current >= self.tokens.len() || self.tokens[self.current].kind == TokenKind::EOF
     }
 
     fn advance(&mut self) -> Option<&Token> {
@@ -154,6 +162,20 @@ impl Parser {
         let c = &self.tokens[self.current];
         self.current += 1;
         Some(c)
+    }
+
+    fn consume(&mut self, token_kind: TokenKind, message: &str) -> Option<ParseError> {
+        let tok = &self.tokens[self.current];
+
+        if tok.kind == token_kind {
+            None
+        } else {
+            Some(ParseError::ExpectedToken {
+                message: message.to_string(),
+                line: tok.span.line,
+                col: tok.span.column,
+            })
+        }
     }
 
     fn peek(&self) -> Option<&Token> {

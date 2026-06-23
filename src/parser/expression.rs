@@ -12,4 +12,7 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Group {
+        expr: Box<Expr>,
+    },
 }

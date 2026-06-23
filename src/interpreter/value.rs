@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::ops::{Add, Div, Mul, Neg, Not, Sub};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -77,7 +77,6 @@ impl Add for Value {
         match (self, rhs) {
             (Value::INT(a), Value::INT(b)) => Value::INT(a + b),
             (a, b) => Value::FLOAT(a.as_f32() + b.as_f32()),
-            _ => panic!("Unexpected behaviour"),
         }
     }
 }
@@ -89,7 +88,6 @@ impl Sub for Value {
         match (self, rhs) {
             (Value::INT(a), Value::INT(b)) => Value::INT(a - b),
             (a, b) => Value::FLOAT(a.as_f32() - b.as_f32()),
-            _ => panic!("Unexpected behaviour"),
         }
     }
 }
@@ -101,7 +99,6 @@ impl Mul for Value {
         match (self, rhs) {
             (Value::INT(a), Value::INT(b)) => Value::INT(a * b),
             (a, b) => Value::FLOAT(a.as_f32() * b.as_f32()),
-            _ => panic!("Unexpected behaviour"),
         }
     }
 }

@@ -47,6 +47,9 @@ impl Lexer {
             '*' => self.add_token(TokenKind::STAR),
             '/' => self.add_token(TokenKind::SLASH),
 
+            '(' => self.add_token(TokenKind::OPEN_BRACE),
+            ')' => self.add_token(TokenKind::CLOSE_BRACE),
+
             '!' => {
                 if let Some(c) = self.peek() {
                     if c == '=' {

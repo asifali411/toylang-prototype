@@ -1,13 +1,24 @@
-use thiserror::Error;
 use colored::Colorize;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ParseError {
     #[error("Unexpected token '{token}' at {line}:{col}")]
-    UnexpectedToken { token: String, line: usize, col: usize },
+    UnexpectedToken {
+        token: String,
+        line: usize,
+        col: usize,
+    },
 
     #[error("Unexpected end of input")]
     UnexpectedEof,
+
+    #[error("{message} at {line}:{col}")]
+    ExpectedToken {
+        message: String,
+        line: usize,
+        col: usize,
+    },
 }
 
 impl ParseError {
@@ -18,7 +29,7 @@ impl ParseError {
                 let loc = format!(" at line: {}, col: {} ", line, col)
                     .black()
                     .on_green();
-                
+
                 eprintln!(
                     "{}: Unexpected token '{}'\n{}\n",
                     prefix,
@@ -28,6 +39,13 @@ impl ParseError {
             }
             ParseError::UnexpectedEof => {
                 eprintln!("{}: unexpected end of input", prefix);
+            }
+            ParseError::ExpectedToken { message, line, col } => {
+                let loc = format!(" at line: {}, col: {} ", line, col)
+                    .black()
+                    .on_green();
+
+                eprintln!("{}: {}\n{}\n", prefix, message, loc);
             }
         }
     }
