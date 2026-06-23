@@ -8,12 +8,13 @@ use lexer::Lexer;
 
 pub fn run(source: String) -> ExitCode {
     
-    let lexer = Lexer::new(source);
+    let mut lexer = Lexer::new(source);
     let result = lexer.tokenize();
 
     match result {
        Ok(tokens) => {
-            
+           // parse
+           println!("{:?}", tokens);
        },
        Err(err) => {
             eprintln!("{}", err);
