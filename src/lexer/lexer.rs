@@ -1,4 +1,4 @@
-use crate::lexer::token::Token;
+use crate::{error::Error, lexer::token::Token};
 
 pub struct Lexer {
     source: Vec<char>,
@@ -19,5 +19,9 @@ impl Lexer {
             column: 0,
             tokens: Vec::new(),
         }
+    }
+
+    pub fn tokenize(&self) -> Result<Vec<Token>, String> {
+        Err(Error::syntax_error("Unexpected Error occured", self.line, self.column))
     }
 }

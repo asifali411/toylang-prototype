@@ -1,5 +1,4 @@
 use std::{fs, process::ExitCode};
-
 use toylang;
 
 fn main() -> ExitCode {
