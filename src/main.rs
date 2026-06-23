@@ -3,7 +3,7 @@ use toylang;
 
 fn main() -> ExitCode {
     
-    let content = fs::read_to_string("test.toy");
+    let content = fs::read_to_string("./test/test.toy");
 
     match content {
        Ok(source) => toylang::run(source),
