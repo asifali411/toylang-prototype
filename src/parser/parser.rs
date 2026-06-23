@@ -1,8 +1,11 @@
 use crate::errors::parse_error::ParseError;
+use crate::parser::statement::{self, Stmt};
 use crate::{
     lexer::token::{Token, TokenKind},
     parser::expression::Expr,
 };
+
+type PResult<T> = Result<T, ParseError>;
 
 #[derive(Debug, Clone)]
 pub struct Parser {
@@ -18,29 +21,44 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, ParseError> {
-        let expr = self.expression()?;
+    pub fn parse(&mut self) -> PResult<Vec<Stmt>> {
+        let mut statements: Vec<Stmt> = Vec::new();
 
         if !self.is_empty() {
-            let tok = self.peek().unwrap();
-
-            return Err(ParseError::UnexpectedToken {
-                token: tok.to_string(),
-                line: tok.span.line,
-                col: tok.span.column,
-            });
+            match self.statement() {
+                Err(e) => return Err(e),
+                Ok(statement) => statements.push(statement),
+            }
         }
 
-        Ok(expr)
+        Ok(statements)
     }
 
     //---------------------------------------------------------------
 
-    fn expression(&mut self) -> Result<Expr, ParseError> {
+    fn statement(&mut self) -> PResult<Stmt> {
+        self.expression_statement()
+    }
+
+    fn expression_statement(&mut self) -> PResult<Stmt> {
+        let expr: Expr = match self.expression() {
+            Err(e) => return Err(e),
+            Ok(e) => e,
+        };
+
+        match self.consume(TokenKind::SEMI, "Expect ';' after an expression") {
+            Err(e) => Err(e),
+            _ => Ok(Stmt::Expr(expr)),
+        }
+    }
+
+    //---------------------------------------------------------------
+
+    fn expression(&mut self) -> PResult<Expr> {
         self.equality()
     }
 
-    fn equality(&mut self) -> Result<Expr, ParseError> {
+    fn equality(&mut self) -> PResult<Expr> {
         let mut expr = self.comparison()?;
 
         while let Some(op) = self.peek() {
@@ -61,7 +79,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn comparison(&mut self) -> Result<Expr, ParseError> {
+    fn comparison(&mut self) -> PResult<Expr> {
         let mut expr = self.term()?;
 
         while let Some(op) = self.peek() {
@@ -82,7 +100,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn term(&mut self) -> Result<Expr, ParseError> {
+    fn term(&mut self) -> PResult<Expr> {
         let mut expr = self.factor()?;
 
         while let Some(op) = self.peek() {
@@ -103,7 +121,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn factor(&mut self) -> Result<Expr, ParseError> {
+    fn factor(&mut self) -> PResult<Expr> {
         let mut expr = self.unary()?;
 
         while let Some(op) = self.peek() {
@@ -124,7 +142,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn unary(&mut self) -> Result<Expr, ParseError> {
+    fn unary(&mut self) -> PResult<Expr> {
         if let Some(tok) = self.peek() {
             if tok.kind == TokenKind::MINUS {
                 let op = self.advance().unwrap().clone();
@@ -137,7 +155,7 @@ impl Parser {
         self.primary()
     }
 
-    fn primary(&mut self) -> Result<Expr, ParseError> {
+    fn primary(&mut self) -> PResult<Expr> {
         match self.advance() {
             Some(tok) => match tok.kind {
                 TokenKind::INT(_) | TokenKind::FLOAT(_) => Ok(Expr::Literal(tok.clone())),

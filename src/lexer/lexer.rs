@@ -42,6 +42,8 @@ impl Lexer {
                 self.column = 0;
             }
 
+            ';' => self.add_token(TokenKind::SEMI),
+
             '+' => self.add_token(TokenKind::PLUS),
             '-' => self.add_token(TokenKind::MINUS),
             '*' => self.add_token(TokenKind::STAR),

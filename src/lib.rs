@@ -20,19 +20,21 @@ pub fn run(source: String) -> ExitCode {
 
             let mut parser = Parser::new(&tokens);
             match parser.parse() {
-                Ok(expr) => {
+                Ok(statements) => {
                     //println!("{:#?}", expr);
 
                     let mut interpreter = Interpreter::new();
-                    let result = interpreter.eval_expression(&expr);
+                    for statement in statements {
+                        let result = interpreter.execute(&statement);
 
-                    match result {
-                        Ok(res) => {
-                            println!("{:?}", res);
-                        }
-                        Err(e) => {
-                            e.display();
-                            return ExitCode::FAILURE;
+                        match result {
+                            Ok(res) => {
+                                println!("{:?}", res);
+                            }
+                            Err(e) => {
+                                e.display();
+                                return ExitCode::FAILURE;
+                            }
                         }
                     }
                 }

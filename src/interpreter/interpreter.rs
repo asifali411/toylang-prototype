@@ -2,7 +2,7 @@ use crate::{
     errors::interpreter_error::InterpreterError,
     interpreter::value::Value,
     lexer::token::{Token, TokenKind},
-    parser::expression::Expr,
+    parser::{expression::Expr, statement::Stmt},
 };
 
 type IResult<T> = Result<T, InterpreterError>;
@@ -12,6 +12,12 @@ pub struct Interpreter;
 impl Interpreter {
     pub fn new() -> Self {
         Self {}
+    }
+
+    pub fn execute(&mut self, statement: &Stmt) -> IResult<Value> {
+        match statement {
+            Stmt::Expr(expr) => self.eval_expression(expr),
+        }
     }
 
     pub fn eval_expression(&mut self, expr: &Expr) -> IResult<Value> {
