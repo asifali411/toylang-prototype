@@ -35,8 +35,8 @@ impl fmt::Display for Token {
             TokenKind::GREAT_EQ => write!(f, "GREAT_EQ"),
             TokenKind::EQ_EQ => write!(f, "EQ_EQ"),
             TokenKind::NOT_EQ => write!(f, "NOT_EQ"),
-            TokenKind::OPEN_BRACE => write!(f, "OPEN_BRACE"),
-            TokenKind::CLOSE_BRACE => write!(f, "CLOSE_BRACE"),
+            TokenKind::OPEN_PAREN => write!(f, "OPEN_BRACE"),
+            TokenKind::CLOSE_PAREN => write!(f, "CLOSE_BRACE"),
             TokenKind::EOF => write!(f, "EOF"),
         }
     }
@@ -62,8 +62,8 @@ pub enum TokenKind {
     EQ_EQ,
     NOT_EQ,
 
-    OPEN_BRACE,
-    CLOSE_BRACE,
+    OPEN_PAREN,
+    CLOSE_PAREN,
 
     EOF,
 }

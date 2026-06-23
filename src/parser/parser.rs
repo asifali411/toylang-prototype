@@ -19,7 +19,19 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Expr, ParseError> {
-        self.expression()
+        let expr = self.expression()?;
+
+        if !self.is_empty() {
+            let tok = self.peek().unwrap();
+
+            return Err(ParseError::UnexpectedToken {
+                token: tok.to_string(),
+                line: tok.span.line,
+                col: tok.span.column,
+            });
+        }
+
+        Ok(expr)
     }
 
     //---------------------------------------------------------------
@@ -129,12 +141,12 @@ impl Parser {
         match self.advance() {
             Some(tok) => match tok.kind {
                 TokenKind::INT(_) | TokenKind::FLOAT(_) => Ok(Expr::Literal(tok.clone())),
-                TokenKind::OPEN_BRACE => {
+                TokenKind::OPEN_PAREN => {
                     let expr = self.expression()?;
 
-                    match self.consume(TokenKind::CLOSE_BRACE, "Expect ')' after an expression") {
-                        Some(err) => Err(err),
-                        None => Ok(Expr::Group {
+                    match self.consume(TokenKind::CLOSE_PAREN, "Expect ')' after an expression") {
+                        Err(err) => Err(err),
+                        _ => Ok(Expr::Group {
                             expr: Box::new(expr),
                         }),
                     }
@@ -164,17 +176,18 @@ impl Parser {
         Some(c)
     }
 
-    fn consume(&mut self, token_kind: TokenKind, message: &str) -> Option<ParseError> {
-        let tok = &self.tokens[self.current];
-
-        if tok.kind == token_kind {
-            None
-        } else {
-            Some(ParseError::ExpectedToken {
+    fn consume(&mut self, token_kind: TokenKind, message: &str) -> Result<(), ParseError> {
+        match self.peek() {
+            Some(tok) if tok.kind == token_kind => {
+                self.current += 1;
+                Ok(())
+            }
+            Some(tok) => Err(ParseError::ExpectedToken {
                 message: message.to_string(),
                 line: tok.span.line,
                 col: tok.span.column,
-            })
+            }),
+            None => Err(ParseError::UnexpectedEof),
         }
     }
 
