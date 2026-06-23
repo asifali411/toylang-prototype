@@ -25,7 +25,29 @@ impl Parser {
     //---------------------------------------------------------------
 
     fn expression(&mut self) -> Result<Expr, ParseError> {
-        self.term()
+        self.comparison()
+    }
+
+    fn comparison(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.term()?;
+
+        while let Some(op) = self.peek() {
+            match op.kind {
+                TokenKind::LESS | TokenKind::GREAT |
+                TokenKind::LESS_EQ | TokenKind::GREAT_EQ => {
+                    let op = self.advance().unwrap().clone();
+                    let right = self.term()?;
+                    expr = Expr::Binary {
+                        left: Box::new(expr),
+                        operator: op,
+                        right: Box::new(right),
+                    };
+                }
+                _ => break,
+            }
+        }
+
+        Ok(expr)
     }
 
     fn term(&mut self) -> Result<Expr, ParseError> {

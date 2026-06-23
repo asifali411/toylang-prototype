@@ -42,10 +42,33 @@ impl Lexer {
                 self.line += 1;
                 self.column = 0;
             }
+
             '+' => self.add_token(TokenKind::PLUS),
             '-' => self.add_token(TokenKind::MINUS),
             '*' => self.add_token(TokenKind::STAR),
             '/' => self.add_token(TokenKind::SLASH),
+            
+            '=' => self.add_token(TokenKind::EQUAL), 
+
+            '>' => {
+                if let Some(c) = self.peek() {
+                    if c == '=' {
+                        self.add_token(TokenKind::GREAT_EQ);
+                    } else {
+                        self.add_token(TokenKind::GREAT);
+                    }
+                }
+            },
+            '<' => {
+                if let Some(c) = self.peek() {
+                    if c == '=' {
+                        self.add_token(TokenKind::LESS_EQ);
+                    } else {
+                        self.add_token(TokenKind::LESS);
+                    }
+                }
+            }, 
+
             _ => {
                 if c.is_ascii_digit() {
                     self.generate_number()?;

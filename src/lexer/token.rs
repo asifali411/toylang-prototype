@@ -27,6 +27,11 @@ impl fmt::Display for Token {
             TokenKind::MINUS => write!(f, "MINUS"),
             TokenKind::STAR => write!(f, "STAR"),
             TokenKind::SLASH => write!(f, "SLASH"),
+            TokenKind::EQUAL => write!(f, "EQUAL"),
+            TokenKind::LESS => write!(f, "LESS"),
+            TokenKind::LESS_EQ => write!(f, "LESS_EQ"),
+            TokenKind::GREAT => write!(f, "GREAT"),
+            TokenKind::GREAT_EQ => write!(f, "GREAT_EQ"),
             TokenKind::EOF => write!(f, "EOF"),
         }
     }
@@ -41,6 +46,13 @@ pub enum TokenKind {
     MINUS,
     STAR,
     SLASH,
+
+    EQUAL,
+
+    LESS,
+    LESS_EQ,
+    GREAT,
+    GREAT_EQ,
 
     EOF,
 }

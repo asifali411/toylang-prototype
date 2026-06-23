@@ -49,6 +49,10 @@ impl Interpreter {
             TokenKind::MINUS => Ok(left - right),
             TokenKind::STAR => Ok(left * right),
             TokenKind::SLASH => Ok(left / right),
+            TokenKind::LESS => Ok(left.lt(&right)),
+            TokenKind::LESS_EQ => Ok(left.lt_eq(&right)),
+            TokenKind::GREAT => Ok(left.gt(&right)),
+            TokenKind::GREAT_EQ => Ok(left.gt_eq(&right)),
             ref kind => Err(InterpreterError::UnsupportedBinaryOp { op: kind.clone() }),
         }
     }

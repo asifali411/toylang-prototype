@@ -1,9 +1,13 @@
+use std::cmp::Ordering;
 use std::ops::{Add, Div, Mul, Neg, Not, Sub};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     INT(i64),
     FLOAT(f32),
+
+    TRUE,
+    FALSE,
 
     NULL,
 }
@@ -14,6 +18,38 @@ impl Value {
             Value::INT(n) => *n as f32,
             Value::FLOAT(n) => *n,
             _ => panic!("Unexpected behaviour"),
+        }
+    }
+
+    pub fn lt(&self, value: &Value) -> Value {
+        if self < value {
+            Value::TRUE
+        } else {
+            Value::FALSE
+        }
+    }
+
+    pub fn gt(&self, value: &Value) -> Value {
+        if self > value {
+            Value::TRUE
+        } else {
+            Value::FALSE
+        }
+    }
+
+    pub fn lt_eq(&self, value: &Value) -> Value {
+        if self <= value {
+            Value::TRUE
+        } else {
+            Value::FALSE
+        }
+    }
+
+    pub fn gt_eq(&self, value: &Value) -> Value {
+        if self >= value {
+            Value::TRUE
+        } else {
+            Value::FALSE
         }
     }
 }
@@ -70,6 +106,20 @@ impl Neg for Value {
             Value::INT(n) => Value::INT(-n),
             Value::FLOAT(n) => Value::FLOAT(-n),
             _ => panic!("Unexpected behaviour"),
+        }
+    }
+}
+
+impl PartialOrd for Value {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (Value::INT(a), Value::INT(b)) => a.partial_cmp(b),
+            (Value::FLOAT(a), Value::FLOAT(b)) => a.partial_cmp(b),
+
+            (Value::INT(a), Value::FLOAT(b)) => (*a as f32).partial_cmp(b),
+            (Value::FLOAT(a), Value::INT(b)) => a.partial_cmp(&(*b as f32)),
+
+            _ => None,
         }
     }
 }
