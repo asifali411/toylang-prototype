@@ -2,7 +2,7 @@
 
 use std::process::ExitCode;
 
-mod error;
+mod errors;
 mod lexer;
 mod parser;
 
@@ -10,31 +10,26 @@ use lexer::Lexer;
 use parser::Parser;
 
 pub fn run(source: String) -> ExitCode {
-    
     let mut lexer = Lexer::new(source);
     let result = lexer.tokenize();
 
     match result {
-       Ok(tokens) => {
-           // println!("{:?}", tokens);
+        Ok(tokens) => {
+            // println!("{:?}", tokens);
 
-           let mut parser = Parser::new(tokens);
-           let result = parser.parse();
-
-           match result {
-                Ok(ast) => {
-                    println!("{:?}", ast);
-                },
-                Err(err) => {
-                    eprintln!("{}", err);
+            let mut parser = Parser::new(&tokens);
+            match parser.parse() {
+                Ok(expr) => println!("{:#?}", expr),
+                Err(e) => {
+                    e.display();
                     return ExitCode::FAILURE;
                 }
-           }
-       },
-       Err(err) => {
-            eprintln!("{}", err);
+            }
+        }
+        Err(e) => {
+            e.display();
             return ExitCode::FAILURE;
-       }
+        }
     }
 
     ExitCode::SUCCESS

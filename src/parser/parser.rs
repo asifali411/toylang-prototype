@@ -1,8 +1,8 @@
 use crate::{
-    error::Error,
     lexer::token::{Token, TokenKind},
     parser::expression::Expr,
 };
+use crate::errors::parse_error::ParseError;
 
 #[derive(Debug, Clone)]
 pub struct Parser {
@@ -18,15 +18,17 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, String> {
+    pub fn parse(&mut self) -> Result<Expr, ParseError> {
         self.expression()
     }
 
-    fn expression(&mut self) -> Result<Expr, String> {
+    //---------------------------------------------------------------
+
+    fn expression(&mut self) -> Result<Expr, ParseError> {
         self.term()
     }
 
-    fn term(&mut self) -> Result<Expr, String> {
+    fn term(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.factor()?;
 
         while let Some(op) = self.peek() {
@@ -47,7 +49,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn factor(&mut self) -> Result<Expr, String> {
+    fn factor(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.unary()?;
 
         while let Some(op) = self.peek() {
@@ -68,7 +70,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn unary(&mut self) -> Result<Expr, String> {
+    fn unary(&mut self) -> Result<Expr, ParseError> {
         if let Some(tok) = self.peek() {
             if tok.kind == TokenKind::MINUS {
                 let op = self.advance().unwrap().clone();
@@ -81,23 +83,25 @@ impl Parser {
         self.primary()
     }
 
-    fn primary(&mut self) -> Result<Expr, String> {
+    fn primary(&mut self) -> Result<Expr, ParseError> {
         match self.advance() {
             Some(tok) => match tok.kind {
                 TokenKind::INT(_) | TokenKind::FLOAT(_) => Ok(Expr::Literal(tok.clone())),
-                _ => Err(Error::parse_error(
-                    &format!("Expected expression but found '{tok}'"),
-                    tok.span.line,
-                    tok.span.column,
-                )),
+                _ => Err(ParseError::UnexpectedToken {
+                    token: tok.to_string(),
+                    line: tok.span.line,
+                    col: tok.span.column,
+                }),
             },
-            None => Err(Error::parse_error("Unexpected end of input", 0, 0)),
+            None => Err(ParseError::UnexpectedEof),
         }
     }
 
     //---------------------------------------------------------------
+
     fn is_empty(&self) -> bool {
-        self.current >= self.tokens.len() || self.tokens[self.current].kind == TokenKind::EOF
+        self.current >= self.tokens.len()
+            || self.tokens[self.current].kind == TokenKind::EOF
     }
 
     fn advance(&mut self) -> Option<&Token> {
