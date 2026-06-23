@@ -52,6 +52,22 @@ impl Value {
             Value::FALSE
         }
     }
+
+    pub fn eq(&self, value: &Value) -> Value {
+        if self == value {
+            Value::TRUE
+        } else {
+            Value::FALSE
+        }
+    }
+
+    pub fn not_eq(&self, value: &Value) -> Value {
+        if self != value {
+            Value::TRUE
+        } else {
+            Value::FALSE
+        }
+    }
 }
 
 impl Add for Value {

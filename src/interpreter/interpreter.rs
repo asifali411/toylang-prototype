@@ -53,6 +53,8 @@ impl Interpreter {
             TokenKind::LESS_EQ => Ok(left.lt_eq(&right)),
             TokenKind::GREAT => Ok(left.gt(&right)),
             TokenKind::GREAT_EQ => Ok(left.gt_eq(&right)),
+            TokenKind::EQ_EQ => Ok(left.eq(&right)),
+            TokenKind::NOT_EQ => Ok(left.not_eq(&right)),
             ref kind => Err(InterpreterError::UnsupportedBinaryOp { op: kind.clone() }),
         }
     }

@@ -1,5 +1,4 @@
 #![allow(warnings)]
-
 use std::process::ExitCode;
 
 mod errors;
@@ -17,7 +16,7 @@ pub fn run(source: String) -> ExitCode {
 
     match result {
         Ok(tokens) => {
-            // println!("{:?}", tokens);
+            //println!("{:?}", tokens);
 
             let mut parser = Parser::new(&tokens);
             match parser.parse() {

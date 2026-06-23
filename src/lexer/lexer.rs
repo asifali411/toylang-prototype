@@ -12,7 +12,6 @@ pub struct Lexer {
 
 impl Lexer {
     pub fn new(source: String) -> Lexer {
-        let max_len = source.len();
         Self {
             source: source.chars().collect(),
             start: 0,
@@ -47,27 +46,50 @@ impl Lexer {
             '-' => self.add_token(TokenKind::MINUS),
             '*' => self.add_token(TokenKind::STAR),
             '/' => self.add_token(TokenKind::SLASH),
-            
-            '=' => self.add_token(TokenKind::EQUAL), 
 
+            '!' => {
+                if let Some(c) = self.peek() {
+                    if c == '=' {
+                        self.advance();
+                        self.add_token(TokenKind::NOT_EQ);
+                    } else {
+                        self.add_token(TokenKind::NOT);
+                    }
+                }
+            }
+            
+            '=' => {
+                if let Some(c) = self.peek() {
+                    if c == '=' {
+                        self.advance();
+                        self.add_token(TokenKind::EQ_EQ);
+                    } else {
+                        self.add_token(TokenKind::EQUAL);
+                    }
+                }
+            }
+            
             '>' => {
                 if let Some(c) = self.peek() {
                     if c == '=' {
+                        self.advance();
                         self.add_token(TokenKind::GREAT_EQ);
                     } else {
                         self.add_token(TokenKind::GREAT);
                     }
                 }
-            },
+            }
+            
             '<' => {
                 if let Some(c) = self.peek() {
                     if c == '=' {
+                        self.advance();
                         self.add_token(TokenKind::LESS_EQ);
                     } else {
                         self.add_token(TokenKind::LESS);
                     }
                 }
-            }, 
+            }
 
             _ => {
                 if c.is_ascii_digit() {
@@ -150,6 +172,15 @@ impl Lexer {
         }
         Some(self.source[self.current])
     }
+
+    // unused function
+    // fn peek_next(&self) -> Option<char> {
+    //     if self.current >= self.source.len() - 1 {
+    //         None
+    //     } else {
+    //         Some(self.source[self.current + 1])
+    //     }
+    // }
 
     fn add_token(&mut self, token_kind: TokenKind) {
         self.tokens.push(Token {
