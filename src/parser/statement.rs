@@ -4,7 +4,18 @@ use crate::parser::expression::Expr;
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
-    Var { name: String, initializer: Option<Expr> },
+    Var {
+        name: String,
+        initializer: Option<Expr>,
+    },
     Block(Vec<Box<Stmt>>),
-    IF { condition: Expr, if_body: Box<Stmt>, else_body: Option<Box<Stmt>> }
+    IF {
+        condition: Expr,
+        if_body: Box<Stmt>,
+        else_body: Option<Box<Stmt>>,
+    },
+    LOOP {
+        count: Expr,
+        body: Box<Stmt>,
+    },
 }

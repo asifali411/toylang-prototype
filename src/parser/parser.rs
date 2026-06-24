@@ -95,6 +95,7 @@ impl Parser {
                 TokenKind::PRINT => self.print_statement(),
                 TokenKind::OPEN_BRACE => self.block(),
                 TokenKind::IF => self.if_statement(),
+                TokenKind::LOOP => self.loop_statement(),
                 _ => self.expression_statement(),
             },
             _ => Err(ParseError::UnexpectedEof),
@@ -155,6 +156,21 @@ impl Parser {
                 }
             },
         }
+    }
+
+    fn loop_statement(&mut self) -> PResult<Stmt> {
+        self.advance();
+
+        let count = match self.expression() {
+            Err(e) => return Err(e),
+            Ok(count) => count,
+        };
+        let body = match self.block() {
+            Err(e) => return Err(e),
+            Ok(body) => body,
+        };
+
+        Ok(Stmt::LOOP { count, body: Box::new(body) })
     }
 
     fn block(&mut self) -> PResult<Stmt> {

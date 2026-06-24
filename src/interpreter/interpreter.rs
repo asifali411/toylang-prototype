@@ -37,6 +37,7 @@ impl Interpreter {
                 if_body,
                 else_body,
             } => self.execute_if_statement(condition, if_body, else_body),
+            Stmt::LOOP { count, body } => self.execute_loop_statement(count, body),
         }
     }
 
@@ -60,7 +61,7 @@ impl Interpreter {
                             col: literal.span.column,
                         }),
                     }
-                },
+                }
                 TokenKind::STRING(s) => Ok(Value::STRING(s.to_string())),
                 _ => Err(InterpreterError::UnexpectedLiteral {
                     kind: literal.kind.clone(),
@@ -186,6 +187,25 @@ impl Interpreter {
                 }
             }
         }
+    }
+
+    fn execute_loop_statement(&mut self, count: &Expr, body: &Box<Stmt>) -> IResult<Value> {
+        let count = match self.eval_expression(count) {
+            Err(e) => return Err(e),
+            Ok(count) => match count {
+                Value::INT(c) => c,
+                _ => return Err(InterpreterError::UnexpectedExpr),
+            },
+        };
+
+        for _ in 0..count {
+            match self.execute(body) {
+                Err(e) => return Err(e),
+                Ok(e) => {}
+            }
+        }
+
+        Ok(Value::NULL)
     }
 
     //-----------------------------------------------------------------------------

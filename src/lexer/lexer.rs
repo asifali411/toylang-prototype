@@ -182,6 +182,7 @@ impl Lexer {
             "false" => self.add_token(TokenKind::FALSE),
             "if" => self.add_token(TokenKind::IF),
             "else" => self.add_token(TokenKind::ELSE),
+            "loop" => self.add_token(TokenKind::LOOP),
             _ => self.add_token(TokenKind::IDENT(lexeme)),
         }
     }

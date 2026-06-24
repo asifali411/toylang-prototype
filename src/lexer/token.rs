@@ -37,6 +37,7 @@ pub enum TokenKind {
     VAR,
     TRUE,
     FALSE,
+    LOOP,
 
     PLUS,
     MINUS,
