@@ -6,4 +6,5 @@ pub enum Stmt {
     Print(Expr),
     Var { name: String, initializer: Option<Expr> },
     Block(Vec<Box<Stmt>>),
+    IF { condition: Expr, if_body: Box<Stmt>, else_body: Option<Box<Stmt>> }
 }

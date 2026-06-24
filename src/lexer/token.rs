@@ -30,6 +30,8 @@ pub enum TokenKind {
     INT(i64),
     IDENT(String),
 
+    IF,
+    ELSE,
     PRINT,
     VAR,
     TRUE,

@@ -94,6 +94,7 @@ impl Parser {
             Some(tok) => match tok.kind {
                 TokenKind::PRINT => self.print_statement(),
                 TokenKind::OPEN_BRACE => self.block(),
+                TokenKind::IF => self.if_statement(),
                 _ => self.expression_statement(),
             },
             _ => Err(ParseError::UnexpectedEof),
@@ -123,6 +124,39 @@ impl Parser {
         }
     }
 
+    fn if_statement(&mut self) -> PResult<Stmt> {
+        self.advance();
+        match self.expression() {
+            Err(e) => Err(e),
+            Ok(condition) => match self.block() {
+                Err(e) => Err(e),
+                Ok(if_body) => {
+                    let has_else = match self.peek() {
+                        Some(tok) => true,
+                        _ => false,
+                    };
+
+                    if has_else {
+                        self.advance();
+                        let else_body = self.block()?;
+
+                        return Ok(Stmt::IF {
+                            condition,
+                            if_body: Box::new(if_body),
+                            else_body: Some(Box::new(else_body)),
+                        });
+                    } else {
+                         return Ok(Stmt::IF {
+                            condition,
+                            if_body: Box::new(if_body),
+                            else_body: None,
+                        });
+                    }
+                }
+            },
+        }
+    }
+
     fn block(&mut self) -> PResult<Stmt> {
         self.consume(TokenKind::OPEN_BRACE, "Expect '{' before block");
 
@@ -130,8 +164,8 @@ impl Parser {
 
         while !self.is_empty() && !self.compare(TokenKind::CLOSE_BRACE) {
             match self.declaration() {
-               Ok(statement) => statements.push(Box::new(statement)),
-               Err(e) => return Err(e),
+                Ok(statement) => statements.push(Box::new(statement)),
+                Err(e) => return Err(e),
             }
         }
 

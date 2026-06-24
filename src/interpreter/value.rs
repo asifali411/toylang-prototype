@@ -68,6 +68,10 @@ impl Value {
             Value::FALSE
         }
     }
+
+    pub fn is_true(&self) -> bool {
+        self == &Value::TRUE
+    }
 }
 
 impl Add for Value {

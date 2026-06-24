@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    errors::interpreter_error::InterpreterError,
+    errors::{interpreter_error::InterpreterError, parse_error::ParseError},
     interpreter::{
         environment::{self, Environment},
         value::Value,
@@ -32,6 +32,11 @@ impl Interpreter {
             Stmt::Block(expr) => {
                 self.execute_block(expr, Environment::new_enclosed(self.environment.clone()))
             }
+            Stmt::IF {
+                condition,
+                if_body,
+                else_body,
+            } => self.execute_if_statement(condition, if_body, else_body),
         }
     }
 
@@ -151,6 +156,34 @@ impl Interpreter {
 
         self.environment = previous;
         Ok(return_value)
+    }
+
+    fn execute_if_statement(
+        &mut self,
+        condition: &Expr,
+        if_body: &Box<Stmt>,
+        else_body: &Option<Box<Stmt>>,
+    ) -> IResult<Value> {
+        match self.eval_expression(condition) {
+            Err(e) => return Err(e),
+            Ok(c) => {
+                if c.is_true() {
+                    match self.execute(if_body) {
+                        Err(e) => return Err(e),
+                        Ok(v) => return Ok(v),
+                    }
+                } else {
+                    if else_body.is_some() {
+                        match self.execute(&else_body.as_ref().unwrap()) {
+                            Err(e) => return Err(e),
+                            Ok(v) => return Ok(v),
+                        }
+                    } else {
+                        return Err(InterpreterError::UnexpectedExpr);
+                    }
+                }
+            }
+        }
     }
 
     //-----------------------------------------------------------------------------
