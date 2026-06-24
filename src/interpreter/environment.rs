@@ -6,21 +6,23 @@ type Env = Rc<RefCell<Environment>>;
 #[derive(Debug, Clone)]
 pub struct Environment {
     variables: HashMap<String, Value>,
+    enclosing: Option<Env>,
 }
 
 impl Environment {
     pub fn new() -> Env {
         Rc::new(RefCell::new(Self {
             variables: HashMap::new(),
+            enclosing: None,
         }))
     }
 
     pub fn new_enclosed(enclosing: Env) -> Env {
         Rc::new(RefCell::new(Self {
             variables: HashMap::new(),
+            enclosing: Some(enclosing),
         }))
     }
-
 
     //--------------------------------------------------------------------------
 
@@ -40,6 +42,10 @@ impl Environment {
             return Ok(());
         }
 
+        if let Some(enclosing) = &self.enclosing {
+            return enclosing.borrow_mut().assign_var(name, value, line, col);
+        }
+
         Err(InterpreterError::UndefinedVariable {
             var: name.to_string(),
             line,
@@ -51,7 +57,10 @@ impl Environment {
         if let Some(value) = self.variables.get(name) {
             return Some(value.clone());
         }
-        None
+
+        self.enclosing
+            .as_ref()
+            .and_then(|env| env.borrow().get_var(name, line, col))
     }
 
     //--------------------------------------------------------------------------
