@@ -206,7 +206,7 @@ impl Parser {
 
     fn unary(&mut self) -> PResult<Expr> {
         if let Some(tok) = self.peek() {
-            if tok.kind == TokenKind::MINUS {
+            if tok.kind == TokenKind::MINUS || tok.kind == TokenKind::NOT {
                 let op = self.advance().unwrap().clone();
                 return Ok(Expr::Unary {
                     operator: op,
@@ -221,6 +221,7 @@ impl Parser {
         match self.advance() {
             Some(tok) => match &tok.kind {
                 TokenKind::INT(_) | TokenKind::FLOAT(_) => Ok(Expr::Literal(tok.clone())),
+                TokenKind::TRUE | TokenKind::FALSE => Ok(Expr::Literal(tok.clone())),
                 TokenKind::OPEN_PAREN => {
                     let expr = self.expression()?;
 

@@ -34,6 +34,8 @@ impl Interpreter {
             Expr::Literal(literal) => match &literal.kind {
                 TokenKind::INT(n) => Ok(Value::INT(*n)),
                 TokenKind::FLOAT(n) => Ok(Value::FLOAT(*n)),
+                TokenKind::TRUE => Ok(Value::TRUE),
+                TokenKind::FALSE => Ok(Value::FALSE),
                 TokenKind::IDENT(var) => {
                     match self.environment.borrow_mut().get_var(
                         &var,
@@ -122,6 +124,7 @@ impl Interpreter {
         let value = self.eval_expression(expr)?;
         match op.kind {
             TokenKind::MINUS => Ok(-value),
+            TokenKind::NOT => Ok(!value),
             ref kind => Err(InterpreterError::UnsupportedUnaryOp { op: kind.clone() }),
         }
     }

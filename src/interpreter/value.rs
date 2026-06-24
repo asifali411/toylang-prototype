@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::ops::{Add, Div, Mul, Neg, Sub, Not};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -122,7 +122,17 @@ impl Neg for Value {
         }
     }
 }
+impl Not for Value {
+    type Output = Value;
 
+    fn not(self) -> Self::Output {
+        match self {
+            Value::TRUE => Value::FALSE,
+            Value::FALSE => Value::TRUE,
+            _ => panic!("Unexpected behaviour"),
+        }
+    }
+}
 impl PartialOrd for Value {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {

@@ -32,6 +32,8 @@ pub enum TokenKind {
 
     PRINT,
     VAR,
+    TRUE,
+    FALSE,
 
     PLUS,
     MINUS,
