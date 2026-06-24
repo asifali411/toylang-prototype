@@ -25,7 +25,7 @@ impl Parser {
         let mut statements: Vec<Stmt> = Vec::new();
 
         while !self.is_empty() {
-            match self.statement() {
+            match self.declaration() {
                 Err(e) => return Err(e),
                 Ok(statement) => statements.push(statement),
             }
@@ -36,30 +36,14 @@ impl Parser {
 
     //---------------------------------------------------------------
 
-    fn statement(&mut self) -> PResult<Stmt> {
-        match self.peek() {
-            Some(tok) => match tok.kind {
-                TokenKind::PRINT => self.print_statement(),
-                TokenKind::VAR => self.var_statement(),
-                _ => self.expression_statement(),
-            },
-            _ => Err(ParseError::UnexpectedEof),
+    fn declaration(&mut self) -> PResult<Stmt> {
+        match self.peek().cloned().ok_or(ParseError::UnexpectedEof)?.kind {
+            TokenKind::VAR => self.var_declaration(),
+            _ => self.statement(),
         }
     }
 
-    fn expression_statement(&mut self) -> PResult<Stmt> {
-        let expr: Expr = match self.expression() {
-            Err(e) => return Err(e),
-            Ok(e) => e,
-        };
-
-        match self.consume(TokenKind::SEMI, "Expect ';' after an expression") {
-            Err(e) => Err(e),
-            _ => Ok(Stmt::Expr(expr)),
-        }
-    }
-
-    fn var_statement(&mut self) -> PResult<Stmt> {
+    fn var_declaration(&mut self) -> PResult<Stmt> {
         self.advance();
         let name = match self.peek() {
             Some(tok) => match &tok.kind {
@@ -103,6 +87,30 @@ impl Parser {
         }
     }
 
+    //---------------------------------------------------------------
+
+    fn statement(&mut self) -> PResult<Stmt> {
+        match self.peek() {
+            Some(tok) => match tok.kind {
+                TokenKind::PRINT => self.print_statement(),
+                _ => self.expression_statement(),
+            },
+            _ => Err(ParseError::UnexpectedEof),
+        }
+    }
+
+    fn expression_statement(&mut self) -> PResult<Stmt> {
+        let expr: Expr = match self.expression() {
+            Err(e) => return Err(e),
+            Ok(e) => e,
+        };
+        
+        match self.consume(TokenKind::SEMI, "Expect ';' after an expression") {
+            Err(e) => Err(e),
+            _ => Ok(Stmt::Expr(expr)),
+        }
+    }
+
     fn print_statement(&mut self) -> PResult<Stmt> {
         self.advance();
         match self.expression() {
@@ -117,7 +125,36 @@ impl Parser {
     //---------------------------------------------------------------
 
     fn expression(&mut self) -> PResult<Expr> {
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> PResult<Expr> {
+        let expr = self.equality()?;
+
+        if self.compare(TokenKind::EQUAL) {
+            let equals = self.advance().cloned().ok_or(ParseError::UnexpectedEof)?;
+
+            let value = self.assignment()?;
+
+            if let Expr::Var(tok) = expr {
+                if let TokenKind::IDENT(name) = tok.kind {
+                    return Ok(Expr::Assign {
+                        name,
+                        value: Box::new(value),
+                        line: tok.span.line,
+                        col: tok.span.column,
+                    });
+                }
+            }
+
+            return Err(ParseError::InvalidStatement {
+                message: "Invalid assignment target".to_string(),
+                line: equals.span.line,
+                col: equals.span.column,
+            });
+        }
+
+        Ok(expr)
     }
 
     fn equality(&mut self) -> PResult<Expr> {
@@ -273,6 +310,13 @@ impl Parser {
                 col: tok.span.column,
             }),
             None => Err(ParseError::UnexpectedEof),
+        }
+    }
+
+    fn compare(&self, token_kind: TokenKind) -> bool {
+        match self.peek() {
+            Some(tok) if tok.kind == token_kind => true,
+            _ => false,
         }
     }
 

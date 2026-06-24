@@ -80,6 +80,13 @@ impl Interpreter {
                 }
                 _ => panic!("Expected variable identifier, but found: {:?}", identifier),
             },
+            Expr::Assign { name, value, line, col } => {
+                let value = self.eval_expression(value)?;
+
+                self.environment.borrow_mut().assign_var(name, value.clone(), *line, *col);
+
+                Ok(value)
+            }
             _ => Err(InterpreterError::UnexpectedExpr),
         }
     }

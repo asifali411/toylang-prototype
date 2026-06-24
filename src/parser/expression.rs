@@ -16,4 +16,10 @@ pub enum Expr {
     Group {
         expr: Box<Expr>,
     },
+    Assign {
+        name: String,
+        value: Box<Expr>,
+        line: usize,
+        col: usize,
+    }
 }
