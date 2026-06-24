@@ -5,6 +5,7 @@ use std::ops::{Add, Div, Mul, Neg, Sub, Not};
 pub enum Value {
     INT(i64),
     FLOAT(f32),
+    STRING(String),
 
     TRUE,
     FALSE,

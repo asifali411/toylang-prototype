@@ -12,6 +12,9 @@ pub enum LexError {
         line: usize,
         col: usize,
     },
+
+    #[error("{message}\nat line: {line}, col: {col}")]
+    ExpectedCharacter { message: String, line: usize, col: usize }
 }
 
 impl LexError {
@@ -41,6 +44,13 @@ impl LexError {
                     lexeme.yellow(),
                     loc,
                 );
+            }
+            LexError::ExpectedCharacter { message, line, col } => {
+                 let loc = format!(" at line: {}, col: {} ", line, col)
+                    .black()
+                    .on_green();
+                
+                eprintln!("{}\n{}", message, loc);
             }
         }
     }

@@ -60,7 +60,8 @@ impl Interpreter {
                             col: literal.span.column,
                         }),
                     }
-                }
+                },
+                TokenKind::STRING(s) => Ok(Value::STRING(s.to_string())),
                 _ => Err(InterpreterError::UnexpectedLiteral {
                     kind: literal.kind.clone(),
                 }),
@@ -136,6 +137,7 @@ impl Interpreter {
                     Value::NULL => println!("null"),
                     Value::TRUE => println!("true"),
                     Value::FALSE => println!("false"),
+                    Value::STRING(ref v) => println!("{}", v),
                     _ => println!("{:?}", val),
                 };
                 return Ok(val);

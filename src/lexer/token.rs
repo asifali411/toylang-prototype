@@ -29,6 +29,7 @@ pub enum TokenKind {
     FLOAT(f32),
     INT(i64),
     IDENT(String),
+    STRING(String),
 
     IF,
     ELSE,

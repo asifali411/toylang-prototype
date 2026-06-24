@@ -56,6 +56,8 @@ impl Lexer {
             '{' => self.add_token(TokenKind::OPEN_BRACE),
             '}' => self.add_token(TokenKind::CLOSE_BRACE),
 
+            '"' | '\'' => self.generate_string(c)?,
+
             '!' => {
                 if let Some(c) = self.peek() {
                     if c == '=' {
@@ -182,6 +184,31 @@ impl Lexer {
             "else" => self.add_token(TokenKind::ELSE),
             _ => self.add_token(TokenKind::IDENT(lexeme)),
         }
+    }
+
+    fn generate_string(&mut self, punctuation: char) -> LResult<()> {
+        self.start = self.current;
+        self.advance();
+        while let Some(c) = self.peek() {
+            if c == punctuation {
+                break;
+            }
+            self.advance();
+        }
+
+        if self.is_empty() {
+            return Err(LexError::ExpectedCharacter {
+                message: format!("'{}' was never closed", punctuation),
+                line: self.line,
+                col: self.column,
+            });
+        }
+
+        let string: String = self.source[self.start..self.current].iter().collect();
+
+        self.advance();
+        self.add_token(TokenKind::STRING(string));
+        Ok(())
     }
 
     //---------------------------------------------------------------------------

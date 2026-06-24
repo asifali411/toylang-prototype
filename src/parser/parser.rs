@@ -310,6 +310,7 @@ impl Parser {
             Some(tok) => match &tok.kind {
                 TokenKind::INT(_) | TokenKind::FLOAT(_) => Ok(Expr::Literal(tok.clone())),
                 TokenKind::TRUE | TokenKind::FALSE => Ok(Expr::Literal(tok.clone())),
+                TokenKind::STRING(v) => Ok(Expr::Literal(tok.clone())),
                 TokenKind::OPEN_PAREN => {
                     let expr = self.expression()?;
 
