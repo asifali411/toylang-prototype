@@ -21,7 +21,7 @@ pub fn run(source: String) -> ExitCode {
             let mut parser = Parser::new(&tokens);
             match parser.parse() {
                 Ok(statements) => {
-                    //println!("{:#?}", expr);
+                    //println!("{:#?}", statements);
 
                     let mut interpreter = Interpreter::new();
                     for statement in statements {

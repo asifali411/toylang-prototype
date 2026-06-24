@@ -1,6 +1,6 @@
-use thiserror::Error;
-use colored::Colorize;
 use crate::lexer::token::TokenKind;
+use colored::Colorize;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum InterpreterError {
@@ -15,6 +15,13 @@ pub enum InterpreterError {
 
     #[error("Unexpected expression")]
     UnexpectedExpr,
+
+    #[error("Undefined variable '{var}'")]
+    UndefinedVariable {
+        var: String,
+        line: usize,
+        col: usize,
+    },
 }
 
 impl InterpreterError {
@@ -32,6 +39,13 @@ impl InterpreterError {
             }
             InterpreterError::UnexpectedExpr => {
                 eprintln!("{}: unexpected expression", prefix);
+            }
+            InterpreterError::UndefinedVariable { var, line, col } => {
+                let loc = format!(" at line: {}, col: {} ", line, col)
+                    .black()
+                    .on_green();
+
+                eprintln!("{}: Undefined variable '{}'\n{}\n", prefix, var, loc);
             }
         }
     }

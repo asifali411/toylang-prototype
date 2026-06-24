@@ -31,6 +31,7 @@ pub enum TokenKind {
     IDENT(String),
 
     PRINT,
+    VAR,
 
     PLUS,
     MINUS,

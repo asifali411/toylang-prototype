@@ -4,4 +4,5 @@ use crate::parser::expression::Expr;
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
+    Var { name: String, initializer: Option<Expr> }
 }

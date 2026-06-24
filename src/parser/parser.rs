@@ -24,7 +24,7 @@ impl Parser {
     pub fn parse(&mut self) -> PResult<Vec<Stmt>> {
         let mut statements: Vec<Stmt> = Vec::new();
 
-        if !self.is_empty() {
+        while !self.is_empty() {
             match self.statement() {
                 Err(e) => return Err(e),
                 Ok(statement) => statements.push(statement),
@@ -38,8 +38,12 @@ impl Parser {
 
     fn statement(&mut self) -> PResult<Stmt> {
         match self.peek() {
-            Some(tok) if tok.kind == TokenKind::PRINT => self.print_statement(),
-            _ => self.expression_statement(),
+            Some(tok) => match tok.kind {
+                TokenKind::PRINT => self.print_statement(),
+                TokenKind::VAR => self.var_statement(),
+                _ => self.expression_statement(),
+            },
+            _ => Err(ParseError::UnexpectedEof),
         }
     }
 
@@ -52,6 +56,50 @@ impl Parser {
         match self.consume(TokenKind::SEMI, "Expect ';' after an expression") {
             Err(e) => Err(e),
             _ => Ok(Stmt::Expr(expr)),
+        }
+    }
+
+    fn var_statement(&mut self) -> PResult<Stmt> {
+        self.advance();
+        let name = match self.peek() {
+            Some(tok) => match &tok.kind {
+                TokenKind::IDENT(v) => v.clone().to_string(),
+                _ => {
+                    return Err(ParseError::ExpectedVariableName {
+                        line: tok.span.line,
+                        col: tok.span.column,
+                    });
+                }
+            },
+            None => return Err(ParseError::UnexpectedEof),
+        };
+        self.advance();
+
+        let has_initializer = match self.peek() {
+            Some(tok) if tok.kind == TokenKind::EQUAL => {
+                self.advance();
+                true
+            }
+            _ => false,
+        };
+
+        if has_initializer {
+            match self.expression() {
+                Err(e) => Err(e),
+                Ok(initializer) => {
+                    self.consume(TokenKind::SEMI, "Expect ';' after variable declaration");
+                    Ok(Stmt::Var {
+                        name,
+                        initializer: Some(initializer),
+                    })
+                }
+            }
+        } else {
+            self.consume(TokenKind::SEMI, "Expect ';' after variable declaration");
+            Ok(Stmt::Var {
+                name,
+                initializer: None,
+            })
         }
     }
 
@@ -171,7 +219,7 @@ impl Parser {
 
     fn primary(&mut self) -> PResult<Expr> {
         match self.advance() {
-            Some(tok) => match tok.kind {
+            Some(tok) => match &tok.kind {
                 TokenKind::INT(_) | TokenKind::FLOAT(_) => Ok(Expr::Literal(tok.clone())),
                 TokenKind::OPEN_PAREN => {
                     let expr = self.expression()?;
@@ -182,6 +230,10 @@ impl Parser {
                             expr: Box::new(expr),
                         }),
                     }
+                }
+                TokenKind::IDENT(_) => {
+                    // for now consider every identifier as a variable
+                    Ok(Expr::Var(tok.clone()))
                 }
                 _ => Err(ParseError::UnexpectedToken {
                     token: tok.to_string(),

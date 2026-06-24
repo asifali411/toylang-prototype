@@ -173,6 +173,7 @@ impl Lexer {
 
         match &lexeme[..] {
             "print" => self.add_token(TokenKind::PRINT),
+            "var" => self.add_token(TokenKind::VAR),
             _ => self.add_token(TokenKind::IDENT(lexeme)),
         }
     }

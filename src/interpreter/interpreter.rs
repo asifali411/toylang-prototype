@@ -1,32 +1,56 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{
     errors::interpreter_error::InterpreterError,
-    interpreter::value::Value,
+    interpreter::{environment::Environment, value::Value},
     lexer::token::{Token, TokenKind},
     parser::{expression::Expr, statement::Stmt},
 };
 
 type IResult<T> = Result<T, InterpreterError>;
+type Env = Rc<RefCell<Environment>>;
 
-pub struct Interpreter;
+pub struct Interpreter {
+    environment: Env,
+}
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            environment: Environment::new(),
+        }
     }
 
     pub fn execute(&mut self, statement: &Stmt) -> IResult<Value> {
         match statement {
             Stmt::Expr(expr) => self.eval_expression(expr),
             Stmt::Print(expr) => self.execute_print_statement(expr),
+            Stmt::Var { name, initializer } => self.eval_var_statement(name, initializer),
         }
     }
 
     pub fn eval_expression(&mut self, expr: &Expr) -> IResult<Value> {
         match expr {
-            Expr::Literal(literal) => match literal.kind {
-                TokenKind::INT(n) => Ok(Value::INT(n)),
-                TokenKind::FLOAT(n) => Ok(Value::FLOAT(n)),
-                ref kind => Err(InterpreterError::UnexpectedLiteral { kind: kind.clone() }),
+            Expr::Literal(literal) => match &literal.kind {
+                TokenKind::INT(n) => Ok(Value::INT(*n)),
+                TokenKind::FLOAT(n) => Ok(Value::FLOAT(*n)),
+                TokenKind::IDENT(var) => {
+                    match self.environment.borrow_mut().get_var(
+                        &var,
+                        literal.span.line,
+                        literal.span.column,
+                    ) {
+                        Some(value) => Ok(value),
+                        None => Err(InterpreterError::UndefinedVariable {
+                            var: var.to_string(),
+                            line: literal.span.line,
+                            col: literal.span.column,
+                        }),
+                    }
+                }
+                _ => Err(InterpreterError::UnexpectedLiteral {
+                    kind: literal.kind.clone(),
+                }),
             },
             Expr::Unary { operator, right } => self.eval_unary(operator, right),
             Expr::Binary {
@@ -35,7 +59,42 @@ impl Interpreter {
                 right,
             } => self.eval_binary(left, operator, right),
             Expr::Group { expr } => self.eval_expression(expr),
+            Expr::Var(identifier) => match &identifier.kind {
+                TokenKind::IDENT(name) => {
+                    (match self.environment.borrow_mut().get_var(
+                        &name,
+                        identifier.span.line,
+                        identifier.span.column,
+                    ) {
+                        Some(value) => Ok(value),
+                        None => {
+                            return Err(InterpreterError::UndefinedVariable {
+                                var: name.to_string(),
+                                line: identifier.span.line,
+                                col: identifier.span.column,
+                            });
+                        }
+                    })
+                }
+                _ => panic!("Expected variable identifier, but found: {:?}", identifier),
+            },
             _ => Err(InterpreterError::UnexpectedExpr),
+        }
+    }
+
+    pub fn eval_var_statement(&mut self, name: &String, expr: &Option<Expr>) -> IResult<Value> {
+        let value = match expr {
+            Some(e) => self.eval_expression(e),
+            None => Ok(Value::NULL),
+        };
+
+        match value {
+            Err(e) => Err(e),
+            Ok(val) => {
+                self.environment.borrow_mut().define_var(name, val);
+
+                Ok(Value::NULL)
+            }
         }
     }
 
@@ -53,7 +112,7 @@ impl Interpreter {
                     _ => println!("{:?}", val),
                 };
                 return Ok(val);
-            },
+            }
         };
     }
 

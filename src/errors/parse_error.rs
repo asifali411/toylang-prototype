@@ -19,6 +19,9 @@ pub enum ParseError {
         line: usize,
         col: usize,
     },
+
+    #[error("Expected variable name after var keyword at {line}:{col}")]
+    ExpectedVariableName { line: usize, col: usize },
 }
 
 impl ParseError {
@@ -46,6 +49,16 @@ impl ParseError {
                     .on_green();
 
                 eprintln!("{}: {}\n{}\n", prefix, message, loc);
+            }
+            ParseError::ExpectedVariableName { line, col } => {
+                let loc = format!(" at line: {}, col: {} ", line, col)
+                    .black()
+                    .on_green();
+
+                eprintln!(
+                    "{}: Expected variable name after var keyword \n{}\n",
+                    prefix, loc
+                );
             }
         }
     }
