@@ -18,4 +18,8 @@ pub enum Stmt {
         count: Expr,
         body: Box<Stmt>,
     },
+    LOOP_IF {
+        condition: Expr,
+        body: Box<Stmt>,
+    }
 }

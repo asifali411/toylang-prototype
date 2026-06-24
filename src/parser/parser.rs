@@ -95,7 +95,10 @@ impl Parser {
                 TokenKind::PRINT => self.print_statement(),
                 TokenKind::OPEN_BRACE => self.block(),
                 TokenKind::IF => self.if_statement(),
-                TokenKind::LOOP => self.loop_statement(),
+                TokenKind::LOOP => match self.peek_next() {
+                    Some(tok) if tok.kind == TokenKind::IF => self.loop_if_statement(),
+                    _ => self.loop_statement(),
+                },
                 _ => self.expression_statement(),
             },
             _ => Err(ParseError::UnexpectedEof),
@@ -147,7 +150,7 @@ impl Parser {
                             else_body: Some(Box::new(else_body)),
                         });
                     } else {
-                         return Ok(Stmt::IF {
+                        return Ok(Stmt::IF {
                             condition,
                             if_body: Box::new(if_body),
                             else_body: None,
@@ -156,6 +159,23 @@ impl Parser {
                 }
             },
         }
+    }
+
+    fn loop_if_statement(&mut self) -> PResult<Stmt> {
+        self.advance();
+        self.advance();
+
+        let condition = match self.expression() {
+            Err(e) => return Err(e),
+            Ok(condition) => condition,
+        };
+
+        let body = match self.block() {
+            Err(e) => return Err(e),
+            Ok(body) => body,
+        }; 
+
+        Ok(Stmt::LOOP_IF { condition, body: Box::new(body) })
     }
 
     fn loop_statement(&mut self) -> PResult<Stmt> {
@@ -170,7 +190,10 @@ impl Parser {
             Ok(body) => body,
         };
 
-        Ok(Stmt::LOOP { count, body: Box::new(body) })
+        Ok(Stmt::LOOP {
+            count,
+            body: Box::new(body),
+        })
     }
 
     fn block(&mut self) -> PResult<Stmt> {

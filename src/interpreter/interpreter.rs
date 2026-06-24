@@ -38,6 +38,7 @@ impl Interpreter {
                 else_body,
             } => self.execute_if_statement(condition, if_body, else_body),
             Stmt::LOOP { count, body } => self.execute_loop_statement(count, body),
+            Stmt::LOOP_IF { condition, body } => self.execute_loop_if_statement(condition, body),
         }
     }
 
@@ -202,6 +203,26 @@ impl Interpreter {
             match self.execute(body) {
                 Err(e) => return Err(e),
                 Ok(e) => {}
+            }
+        }
+
+        Ok(Value::NULL)
+    }
+
+    fn execute_loop_if_statement(&mut self, condition: &Expr, body: &Box<Stmt>) -> IResult<Value> {
+        loop {
+            let condition = match self.eval_expression(condition) {
+                Err(e) => return Err(e),
+                Ok(condition) => condition,
+            };
+
+            if condition.is_true() {
+                match self.execute(body) {
+                    Err(e) => return Err(e),
+                    Ok(e) => {}
+                }
+            } else {
+                break;
             }
         }
 
