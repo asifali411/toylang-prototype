@@ -93,6 +93,7 @@ impl Parser {
         match self.peek() {
             Some(tok) => match tok.kind {
                 TokenKind::PRINT => self.print_statement(),
+                TokenKind::OPEN_BRACE => self.block(),
                 _ => self.expression_statement(),
             },
             _ => Err(ParseError::UnexpectedEof),
@@ -104,7 +105,7 @@ impl Parser {
             Err(e) => return Err(e),
             Ok(e) => e,
         };
-        
+
         match self.consume(TokenKind::SEMI, "Expect ';' after an expression") {
             Err(e) => Err(e),
             _ => Ok(Stmt::Expr(expr)),
@@ -120,6 +121,22 @@ impl Parser {
                 _ => Ok(Stmt::Print(expr)),
             },
         }
+    }
+
+    fn block(&mut self) -> PResult<Stmt> {
+        self.consume(TokenKind::OPEN_BRACE, "Expect '{' before block");
+
+        let mut statements: Vec<Box<Stmt>> = Vec::new();
+
+        while !self.is_empty() && !self.compare(TokenKind::CLOSE_BRACE) {
+            match self.declaration() {
+               Ok(statement) => statements.push(Box::new(statement)),
+               Err(e) => return Err(e),
+            }
+        }
+
+        self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after block.");
+        Ok(Stmt::Block(statements))
     }
 
     //---------------------------------------------------------------

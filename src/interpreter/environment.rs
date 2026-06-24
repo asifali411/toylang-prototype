@@ -15,6 +15,13 @@ impl Environment {
         }))
     }
 
+    pub fn new_enclosed(enclosing: Env) -> Env {
+        Rc::new(RefCell::new(Self {
+            variables: HashMap::new(),
+        }))
+    }
+
+
     //--------------------------------------------------------------------------
 
     pub fn define_var(&mut self, name: impl Into<String>, value: Value) {

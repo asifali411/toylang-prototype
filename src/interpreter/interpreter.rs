@@ -2,7 +2,10 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     errors::interpreter_error::InterpreterError,
-    interpreter::{environment::Environment, value::Value},
+    interpreter::{
+        environment::{self, Environment},
+        value::Value,
+    },
     lexer::token::{Token, TokenKind},
     parser::{expression::Expr, statement::Stmt},
 };
@@ -26,6 +29,9 @@ impl Interpreter {
             Stmt::Expr(expr) => self.eval_expression(expr),
             Stmt::Print(expr) => self.execute_print_statement(expr),
             Stmt::Var { name, initializer } => self.eval_var_statement(name, initializer),
+            Stmt::Block(expr) => {
+                self.execute_block(expr, Environment::new_enclosed(self.environment.clone()))
+            }
         }
     }
 
@@ -80,10 +86,17 @@ impl Interpreter {
                 }
                 _ => panic!("Expected variable identifier, but found: {:?}", identifier),
             },
-            Expr::Assign { name, value, line, col } => {
+            Expr::Assign {
+                name,
+                value,
+                line,
+                col,
+            } => {
                 let value = self.eval_expression(value)?;
 
-                self.environment.borrow_mut().assign_var(name, value.clone(), *line, *col);
+                self.environment
+                    .borrow_mut()
+                    .assign_var(name, value.clone(), *line, *col);
 
                 Ok(value)
             }
@@ -123,6 +136,21 @@ impl Interpreter {
                 return Ok(val);
             }
         };
+    }
+
+    fn execute_block(&mut self, statements: &Vec<Box<Stmt>>, environment: Env) -> IResult<Value> {
+        let previous = std::mem::replace(&mut self.environment, environment);
+        let mut return_value: Value = Value::NULL;
+
+        for statement in statements {
+            let value = self.execute(&statement);
+            match value {
+                _ => {}
+            };
+        }
+
+        self.environment = previous;
+        Ok(return_value)
     }
 
     //-----------------------------------------------------------------------------

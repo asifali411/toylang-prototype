@@ -52,6 +52,8 @@ pub enum TokenKind {
 
     OPEN_PAREN,
     CLOSE_PAREN,
+    OPEN_BRACE,
+    CLOSE_BRACE,
 
     SEMI,
     EOF,

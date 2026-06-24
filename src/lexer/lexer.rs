@@ -53,6 +53,8 @@ impl Lexer {
 
             '(' => self.add_token(TokenKind::OPEN_PAREN),
             ')' => self.add_token(TokenKind::CLOSE_PAREN),
+            '{' => self.add_token(TokenKind::OPEN_BRACE),
+            '}' => self.add_token(TokenKind::CLOSE_BRACE),
 
             '!' => {
                 if let Some(c) = self.peek() {
