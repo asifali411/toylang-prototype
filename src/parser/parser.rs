@@ -37,7 +37,10 @@ impl Parser {
     //---------------------------------------------------------------
 
     fn statement(&mut self) -> PResult<Stmt> {
-        self.expression_statement()
+        match self.peek() {
+            Some(tok) if tok.kind == TokenKind::PRINT => self.print_statement(),
+            _ => self.expression_statement(),
+        }
     }
 
     fn expression_statement(&mut self) -> PResult<Stmt> {
@@ -49,6 +52,17 @@ impl Parser {
         match self.consume(TokenKind::SEMI, "Expect ';' after an expression") {
             Err(e) => Err(e),
             _ => Ok(Stmt::Expr(expr)),
+        }
+    }
+
+    fn print_statement(&mut self) -> PResult<Stmt> {
+        self.advance();
+        match self.expression() {
+            Err(e) => Err(e),
+            Ok(expr) => match self.consume(TokenKind::SEMI, "Expect ';' after print statement") {
+                Err(e) => Err(e),
+                _ => Ok(Stmt::Print(expr)),
+            },
         }
     }
 

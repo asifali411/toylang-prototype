@@ -17,6 +17,7 @@ impl Interpreter {
     pub fn execute(&mut self, statement: &Stmt) -> IResult<Value> {
         match statement {
             Stmt::Expr(expr) => self.eval_expression(expr),
+            Stmt::Print(expr) => self.execute_print_statement(expr),
         }
     }
 
@@ -36,6 +37,24 @@ impl Interpreter {
             Expr::Group { expr } => self.eval_expression(expr),
             _ => Err(InterpreterError::UnexpectedExpr),
         }
+    }
+
+    fn execute_print_statement(&mut self, expr: &Expr) -> IResult<Value> {
+        let value = self.eval_expression(expr);
+        match value {
+            Err(e) => return Err(e),
+            Ok(val) => {
+                match val {
+                    Value::INT(n) => println!("{}", n),
+                    Value::FLOAT(n) => println!("{}", n),
+                    Value::NULL => println!("null"),
+                    Value::TRUE => println!("true"),
+                    Value::FALSE => println!("false"),
+                    _ => println!("{:?}", val),
+                };
+                return Ok(val);
+            },
+        };
     }
 
     //-----------------------------------------------------------------------------

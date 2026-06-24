@@ -29,7 +29,7 @@ pub fn run(source: String) -> ExitCode {
 
                         match result {
                             Ok(res) => {
-                                println!("{:?}", res);
+                                //println!("{:?}", res);
                             }
                             Err(e) => {
                                 e.display();

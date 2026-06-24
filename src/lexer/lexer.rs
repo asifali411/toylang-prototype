@@ -1,6 +1,8 @@
 use crate::errors::lex_error::LexError;
 use crate::lexer::token::{Span, Token, TokenKind};
 
+type LResult<T> = Result<T, LexError>;
+
 pub struct Lexer {
     source: Vec<char>,
     start: usize,
@@ -22,7 +24,7 @@ impl Lexer {
         }
     }
 
-    pub fn tokenize(&mut self) -> Result<&Vec<Token>, LexError> {
+    pub fn tokenize(&mut self) -> LResult<&Vec<Token>> {
         while !self.is_empty() {
             self.start = self.current;
             self.scan_token()?;
@@ -33,7 +35,7 @@ impl Lexer {
 
     //---------------------------------------------------------------------------
 
-    fn scan_token(&mut self) -> Result<(), LexError> {
+    fn scan_token(&mut self) -> LResult<()> {
         let c = self.advance().unwrap();
         match c {
             ' ' | '\t' => self.column += 1,
@@ -62,7 +64,7 @@ impl Lexer {
                     }
                 }
             }
-            
+
             '=' => {
                 if let Some(c) = self.peek() {
                     if c == '=' {
@@ -73,7 +75,7 @@ impl Lexer {
                     }
                 }
             }
-            
+
             '>' => {
                 if let Some(c) = self.peek() {
                     if c == '=' {
@@ -84,7 +86,7 @@ impl Lexer {
                     }
                 }
             }
-            
+
             '<' => {
                 if let Some(c) = self.peek() {
                     if c == '=' {
@@ -99,6 +101,8 @@ impl Lexer {
             _ => {
                 if c.is_ascii_digit() {
                     self.generate_number()?;
+                } else if c.is_ascii_alphabetic() {
+                    self.generate_identifier();
                 } else {
                     return Err(LexError::UndefinedCharacter {
                         char: c,
@@ -111,7 +115,7 @@ impl Lexer {
         Ok(())
     }
 
-    fn generate_number(&mut self) -> Result<(), LexError> {
+    fn generate_number(&mut self) -> LResult<()> {
         let mut is_float = false;
 
         while let Some(c) = self.peek() {
@@ -155,6 +159,24 @@ impl Lexer {
         Ok(())
     }
 
+    fn generate_identifier(&mut self) {
+        while let Some(c) = self.peek() {
+            if c.is_ascii_alphanumeric() || c == '_' {
+                self.advance();
+                continue;
+            }
+
+            break;
+        }
+
+        let lexeme: String = self.source[self.start..self.current].iter().collect();
+
+        match &lexeme[..] {
+            "print" => self.add_token(TokenKind::PRINT),
+            _ => self.add_token(TokenKind::IDENT(lexeme)),
+        }
+    }
+
     //---------------------------------------------------------------------------
 
     fn is_empty(&self) -> bool {
@@ -177,15 +199,6 @@ impl Lexer {
         }
         Some(self.source[self.current])
     }
-
-    // unused function
-    // fn peek_next(&self) -> Option<char> {
-    //     if self.current >= self.source.len() - 1 {
-    //         None
-    //     } else {
-    //         Some(self.source[self.current + 1])
-    //     }
-    // }
 
     fn add_token(&mut self, token_kind: TokenKind) {
         self.tokens.push(Token {
