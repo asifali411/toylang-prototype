@@ -5,6 +5,7 @@ use crate::{
     interpreter::{
         environment::Environment,
         value::Value,
+        function::Function,
     },
     lexer::token::{Token, TokenKind},
     parser::{expression::Expr, statement::Stmt},
@@ -37,6 +38,7 @@ impl Interpreter {
             }
             Stmt::LOOP { count, body } => self.execute_loop_statement(count, body),
             Stmt::LOOP_IF { condition, body } => self.execute_loop_if_statement(condition, body),
+            Stmt::Func { name, parameters, body } => self.eval_func_statement(name, parameters, body),
         }
     }
 
@@ -79,6 +81,15 @@ impl Interpreter {
             None => Value::NULL,
         };
         self.environment.borrow_mut().define_var(name, value);
+        Ok(Value::NULL)
+    }
+
+    pub fn eval_func_statement(&mut self, name: &String, parameters: &Vec<Token>, body: &Box<Stmt>) -> IResult<Value> {
+        let func = Function::new(parameters.to_vec(), body.clone());
+
+        self.environment.borrow_mut().define_func(name, func);
+
+        println!("{:#?}", self.environment);
         Ok(Value::NULL)
     }
 

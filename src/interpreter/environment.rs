@@ -1,4 +1,4 @@
-use crate::{errors::interpreter_error::InterpreterError, interpreter::value::Value};
+use crate::{errors::interpreter_error::InterpreterError, interpreter::{function::Function, value::Value}, lexer::token::Token, parser::statement::Stmt};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 type Env = Rc<RefCell<Environment>>;
@@ -6,6 +6,7 @@ type Env = Rc<RefCell<Environment>>;
 #[derive(Debug, Clone)]
 pub struct Environment {
     variables: HashMap<String, Value>,
+    functions: HashMap<String, Function>,
     enclosing: Option<Env>,
 }
 
@@ -13,6 +14,7 @@ impl Environment {
     pub fn new() -> Env {
         Rc::new(RefCell::new(Self {
             variables: HashMap::new(),
+            functions: HashMap::new(),
             enclosing: None,
         }))
     }
@@ -20,6 +22,7 @@ impl Environment {
     pub fn new_enclosed(enclosing: Env) -> Env {
         Rc::new(RefCell::new(Self {
             variables: HashMap::new(),
+            functions: HashMap::new(),
             enclosing: Some(enclosing),
         }))
     }
@@ -64,4 +67,18 @@ impl Environment {
     }
 
     //--------------------------------------------------------------------------
+    
+    pub fn define_func(&mut self, name: impl Into<String>, func: Function) {
+        self.functions.insert(name.into(), func);
+    }
+
+    pub fn get_func(&self, name: &str) -> Option<Function> {
+        if let Some(func) = self.functions.get(name) {
+            return Some(func.clone());
+        }
+
+        self.enclosing
+            .as_ref()
+            .and_then(|env| env.borrow().get_func(name))
+    }
 }
