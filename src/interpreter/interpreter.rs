@@ -15,7 +15,7 @@ type IResult<T> = Result<T, InterpreterError>;
 type Env = Rc<RefCell<Environment>>;
 
 pub struct Interpreter {
-    environment: Env,
+    pub environment: Env,
 }
 
 impl Interpreter {
@@ -70,7 +70,8 @@ impl Interpreter {
                     .borrow_mut()
                     .assign_var(name, value.clone(), *line, *col);
                 Ok(value)
-            }
+            },
+            Expr::Call { callee, arguments } => self.eval_call(callee, arguments),
             _ => Err(InterpreterError::UnexpectedExpr),
         }
     }
@@ -85,11 +86,10 @@ impl Interpreter {
     }
 
     pub fn eval_func_statement(&mut self, name: &String, parameters: &Vec<Token>, body: &Box<Stmt>) -> IResult<Value> {
-        let func = Function::new(parameters.to_vec(), body.clone());
+        let func = Function::new(parameters.to_vec(), body.clone(), &self.environment);
 
         self.environment.borrow_mut().define_func(name, func);
 
-        println!("{:#?}", self.environment);
         Ok(Value::NULL)
     }
 
@@ -107,7 +107,7 @@ impl Interpreter {
         Ok(val)
     }
 
-    fn execute_block(&mut self, statements: &Vec<Box<Stmt>>, environment: Env) -> IResult<Value> {
+    pub fn execute_block(&mut self, statements: &Vec<Box<Stmt>>, environment: Env) -> IResult<Value> {
         let previous = std::mem::replace(&mut self.environment, environment);
         let mut result = Ok(Value::NULL);
 
@@ -196,4 +196,33 @@ impl Interpreter {
             ref kind => Err(InterpreterError::UnsupportedBinaryOp { op: kind.clone() }),
         }
     }
+
+    fn eval_call(&mut self, callee: &Expr, arguments: &Vec<Box<Expr>>) -> IResult<Value> {
+        let name = match callee {
+            Expr::Var(token) => {
+                if let TokenKind::IDENT(n) = &token.kind {
+                    n.clone()
+                } else {
+                    return Err(InterpreterError::UnexpectedExpr);
+                }
+            },
+            _ => return Err(InterpreterError::UnexpectedExpr),
+        };
+
+        let func = 
+            self.environment
+            .borrow()
+            .get_func(&name)
+            .ok_or_else(|| InterpreterError::UndefinedVariable { 
+                var: name.clone(), line: 0, col: 0, 
+            })?;
+
+        let args: Vec<Value> = arguments
+        .iter()
+        .map(|a| self.eval_expression(a))
+        .collect::<IResult<_>>()?;
+
+        func.call(self, args)
+    }
+
 }

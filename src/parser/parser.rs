@@ -185,6 +185,31 @@ impl Parser {
         self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after block.")?;
         Ok(Stmt::Block(statements))
     }
+    
+    fn finish_call(&mut self, callee: Expr) -> PResult<Expr> {
+        let mut arguments = Vec::new();
+
+        if !self.compare(TokenKind::CLOSE_PAREN) {
+            arguments.push(Box::new(self.expression()?));
+
+            while self.compare(TokenKind::COMMA) {
+                self.advance();
+
+                if arguments.len() >= 255 {
+                    panic!("Can't have more than 255 arguments");
+                }
+
+                arguments.push(Box::new(self.expression()?));
+            }
+        }
+        
+        self.consume(TokenKind::CLOSE_PAREN, "Expect ')' after arguments");
+        
+        Ok(Expr::Call {
+            callee: Box::new(callee),
+            arguments,
+        })
+    }
 
     //---------------------------------------------------------------
 
@@ -314,7 +339,23 @@ impl Parser {
                 });
             }
         }
-        self.primary()
+        self.call()
+    }
+
+    fn call(&mut self) -> PResult<Expr> {
+        let mut expr = self.primary()?;
+
+        while let Some(op) = self.peek() {
+            match op.kind {
+                TokenKind::OPEN_PAREN => {
+                    self.advance();
+                    expr = self.finish_call(expr)?;
+                },
+                _ => break,
+            }
+        }
+
+        Ok(expr)
     }
 
     fn primary(&mut self) -> PResult<Expr> {
