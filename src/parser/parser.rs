@@ -36,6 +36,7 @@ impl Parser {
     fn declaration(&mut self) -> PResult<Stmt> {
         match self.peek().cloned().ok_or(ParseError::UnexpectedEof)?.kind {
             TokenKind::VAR => self.var_declaration(),
+            TokenKind::FUNC => self.func_declaration(),
             _ => self.statement(),
         }
     }
@@ -50,7 +51,7 @@ impl Parser {
                     return Err(ParseError::ExpectedVariableName {
                         line: tok.span.line,
                         col: tok.span.column,
-                    })
+                    });
                 }
             },
             None => return Err(ParseError::UnexpectedEof),
@@ -66,6 +67,46 @@ impl Parser {
 
         self.consume(TokenKind::SEMI, "Expect ';' after variable declaration")?;
         Ok(Stmt::Var { name, initializer })
+    }
+
+    fn func_declaration(&mut self) -> PResult<Stmt> {
+        self.advance();
+
+        let name = match self.peek() {
+            Some(tok) => match &tok.kind {
+                TokenKind::IDENT(v) => v.clone(),
+                _ => {
+                    return Err(ParseError::ExpectedFunctionName {
+                        line: tok.span.line,
+                        col: tok.span.column,
+                    });
+                }
+            },
+            None => return Err(ParseError::UnexpectedEof),
+        };
+        self.advance();
+        self.consume(TokenKind::OPEN_PAREN, "Expect '(' after function name")?;
+
+        let mut parameters: Vec<Token> = Vec::new();
+
+        if !self.compare(TokenKind::CLOSE_PAREN) {
+            parameters.push(self.consume_ident("Expect parameter name")?);
+
+            while self.compare(TokenKind::COMMA) {
+                self.advance();
+                // TODO: handle max parameter length here
+
+                parameters.push(self.consume_ident("Expect parameter name")?);
+            }
+        }
+        self.consume(TokenKind::CLOSE_PAREN, "Expect ')' after parameters")?;
+        let body = self.block()?;
+
+        Ok(Stmt::Func {
+            name,
+            parameters,
+            body: Box::new(body),
+        })
     }
 
     //---------------------------------------------------------------
@@ -328,6 +369,20 @@ impl Parser {
                 line: tok.span.line,
                 col: tok.span.column,
             }),
+            None => Err(ParseError::UnexpectedEof),
+        }
+    }
+
+    fn consume_ident(&mut self, message: &str) -> PResult<Token> {
+        match self.peek() {
+            Some(tok) => match &tok.kind {
+                TokenKind::IDENT(_) => Ok(self.advance().unwrap().clone()),
+                _ => Err(ParseError::ExpectedToken {
+                    message: message.to_string(),
+                    line: tok.span.line,
+                    col: tok.span.column,
+                }),
+            },
             None => Err(ParseError::UnexpectedEof),
         }
     }

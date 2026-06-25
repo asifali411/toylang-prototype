@@ -1,4 +1,4 @@
-use crate::parser::expression::Expr;
+use crate::{lexer::token::Token, parser::expression::Expr};
 
 #[derive(Debug, Clone)]
 pub enum Stmt {
@@ -20,6 +20,11 @@ pub enum Stmt {
     },
     LOOP_IF {
         condition: Expr,
+        body: Box<Stmt>,
+    },
+    Func {
+        name: String,
+        parameters: Vec<Token>,
         body: Box<Stmt>,
     }
 }

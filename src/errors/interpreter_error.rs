@@ -22,6 +22,12 @@ pub enum InterpreterError {
         line: usize,
         col: usize,
     },
+
+    #[error("Expected {expected} arguments but recieved {got} arguments")]
+    ArityMismatch {
+        expected: usize,
+        got: usize,
+    }
 }
 
 impl InterpreterError {
@@ -46,6 +52,9 @@ impl InterpreterError {
                     .on_green();
 
                 eprintln!("{}: Undefined variable '{}'\n{}\n", prefix, var, loc);
+            }
+            InterpreterError::ArityMismatch { expected, got } => {
+                eprintln!("Expected {expected} arguments but recieved {got} arguments");
             }
         }
     }

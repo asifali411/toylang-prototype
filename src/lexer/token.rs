@@ -38,6 +38,7 @@ pub enum TokenKind {
     TRUE,
     FALSE,
     LOOP,
+    FUNC,
 
     PLUS,
     MINUS,
@@ -59,6 +60,7 @@ pub enum TokenKind {
     OPEN_BRACE,
     CLOSE_BRACE,
 
+    COMMA,
     SEMI,
     EOF,
 }

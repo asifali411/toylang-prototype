@@ -45,6 +45,7 @@ impl Lexer {
             }
 
             ';' => self.add_token(TokenKind::SEMI),
+            ',' => self.add_token(TokenKind::COMMA),
 
             '+' => self.add_token(TokenKind::PLUS),
             '-' => self.add_token(TokenKind::MINUS),
@@ -183,6 +184,7 @@ impl Lexer {
             "if" => self.add_token(TokenKind::IF),
             "else" => self.add_token(TokenKind::ELSE),
             "loop" => self.add_token(TokenKind::LOOP),
+            "func" => self.add_token(TokenKind::FUNC),
             _ => self.add_token(TokenKind::IDENT(lexeme)),
         }
     }
