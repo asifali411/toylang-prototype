@@ -9,16 +9,16 @@ pub enum Stmt {
         initializer: Option<Expr>,
     },
     Block(Vec<Box<Stmt>>),
-    IF {
+    If {
         condition: Expr,
         if_body: Box<Stmt>,
         else_body: Option<Box<Stmt>>,
     },
-    LOOP {
+    Loop {
         count: Expr,
         body: Box<Stmt>,
     },
-    LOOP_IF {
+    LoopIf {
         condition: Expr,
         body: Box<Stmt>,
     },

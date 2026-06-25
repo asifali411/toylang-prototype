@@ -152,7 +152,7 @@ impl Parser {
             None
         };
 
-        Ok(Stmt::IF {
+        Ok(Stmt::If {
             condition,
             if_body,
             else_body,
@@ -164,14 +164,14 @@ impl Parser {
         self.advance();
         let condition = self.expression()?;
         let body = Box::new(self.block()?);
-        Ok(Stmt::LOOP_IF { condition, body })
+        Ok(Stmt::LoopIf { condition, body })
     }
 
     fn loop_statement(&mut self) -> PResult<Stmt> {
         self.advance();
         let count = self.expression()?;
         let body = Box::new(self.block()?);
-        Ok(Stmt::LOOP { count, body })
+        Ok(Stmt::Loop { count, body })
     }
 
     fn block(&mut self) -> PResult<Stmt> {

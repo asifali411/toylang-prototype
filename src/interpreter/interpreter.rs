@@ -33,11 +33,11 @@ impl Interpreter {
             Stmt::Block(stmts) => {
                 self.execute_block(stmts, Environment::new_enclosed(self.environment.clone()))
             }
-            Stmt::IF { condition, if_body, else_body } => {
+            Stmt::If { condition, if_body, else_body } => {
                 self.execute_if_statement(condition, if_body, else_body)
             }
-            Stmt::LOOP { count, body } => self.execute_loop_statement(count, body),
-            Stmt::LOOP_IF { condition, body } => self.execute_loop_if_statement(condition, body),
+            Stmt::Loop { count, body } => self.execute_loop_statement(count, body),
+            Stmt::LoopIf { condition, body } => self.execute_loop_if_statement(condition, body),
             Stmt::Func { name, parameters, body } => self.eval_func_statement(name, parameters, body),
         }
     }
