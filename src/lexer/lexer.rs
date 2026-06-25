@@ -185,6 +185,7 @@ impl Lexer {
             "else" => self.add_token(TokenKind::ELSE),
             "loop" => self.add_token(TokenKind::LOOP),
             "func" => self.add_token(TokenKind::FUNC),
+            "return" => self.add_token(TokenKind::RETURN),
             _ => self.add_token(TokenKind::IDENT(lexeme)),
         }
     }

@@ -39,6 +39,7 @@ pub enum TokenKind {
     FALSE,
     LOOP,
     FUNC,
+    RETURN,
 
     PLUS,
     MINUS,

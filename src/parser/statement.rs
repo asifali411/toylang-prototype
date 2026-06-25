@@ -26,5 +26,6 @@ pub enum Stmt {
         name: String,
         parameters: Vec<Token>,
         body: Box<Stmt>,
-    }
+    },
+    Return(Expr),
 }

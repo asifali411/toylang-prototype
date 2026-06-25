@@ -37,7 +37,7 @@ impl Function {
     }
 
     let result = match &*self.body {
-      Stmt::Block(stmts) => interpreter.execute_block(stmts, interpreter.environment.clone()),
+      Stmt::Block(stmts) => interpreter.execute_block(stmts, env),
       _ => panic!("Unexpected behaviour"),
     }?;
 

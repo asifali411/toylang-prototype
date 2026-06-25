@@ -39,6 +39,7 @@ impl Interpreter {
             Stmt::Loop { count, body } => self.execute_loop_statement(count, body),
             Stmt::LoopIf { condition, body } => self.execute_loop_if_statement(condition, body),
             Stmt::Func { name, parameters, body } => self.eval_func_statement(name, parameters, body),
+            Stmt::Return(expr) => self.eval_return_statement(expr),
         }
     }
 
@@ -116,6 +117,11 @@ impl Interpreter {
             if result.is_err() {
                 break;
             }
+
+            match &**statement {
+                Stmt::Return(_) => break,
+                _ => {},
+            };
         }
 
         self.environment = previous;
@@ -223,6 +229,11 @@ impl Interpreter {
         .collect::<IResult<_>>()?;
 
         func.call(self, args)
+    }
+
+    fn eval_return_statement(&mut self, expr: &Expr) -> IResult<Value> {
+        let value = self.eval_expression(expr)?;
+        Ok(value)
     }
 
 }

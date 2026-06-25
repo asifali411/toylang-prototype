@@ -121,6 +121,7 @@ impl Parser {
                     Some(tok) if tok.kind == TokenKind::IF => self.loop_if_statement(),
                     _ => self.loop_statement(),
                 },
+                TokenKind::RETURN => self.return_statement(),
                 _ => self.expression_statement(),
             },
             None => Err(ParseError::UnexpectedEof),
@@ -172,6 +173,13 @@ impl Parser {
         let count = self.expression()?;
         let body = Box::new(self.block()?);
         Ok(Stmt::Loop { count, body })
+    }
+
+    fn return_statement(&mut self) -> PResult<Stmt> {
+        self.advance();
+        let expr = self.expression()?;
+        self.consume(TokenKind::SEMI, "Expect ';' after return statement")?;
+        Ok(Stmt::Return(expr))
     }
 
     fn block(&mut self) -> PResult<Stmt> {
