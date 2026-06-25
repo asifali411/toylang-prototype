@@ -1,5 +1,5 @@
 use crate::errors::parse_error::ParseError;
-use crate::parser::statement::{self, Stmt};
+use crate::parser::statement::Stmt;
 use crate::{
     lexer::token::{Token, TokenKind},
     parser::expression::Expr,
@@ -25,10 +25,7 @@ impl Parser {
         let mut statements: Vec<Stmt> = Vec::new();
 
         while !self.is_empty() {
-            match self.declaration() {
-                Err(e) => return Err(e),
-                Ok(statement) => statements.push(statement),
-            }
+            statements.push(self.declaration()?);
         }
 
         Ok(statements)
@@ -45,46 +42,30 @@ impl Parser {
 
     fn var_declaration(&mut self) -> PResult<Stmt> {
         self.advance();
+
         let name = match self.peek() {
             Some(tok) => match &tok.kind {
-                TokenKind::IDENT(v) => v.clone().to_string(),
+                TokenKind::IDENT(v) => v.clone(),
                 _ => {
                     return Err(ParseError::ExpectedVariableName {
                         line: tok.span.line,
                         col: tok.span.column,
-                    });
+                    })
                 }
             },
             None => return Err(ParseError::UnexpectedEof),
         };
         self.advance();
 
-        let has_initializer = match self.peek() {
-            Some(tok) if tok.kind == TokenKind::EQUAL => {
-                self.advance();
-                true
-            }
-            _ => false,
+        let initializer = if self.compare(TokenKind::EQUAL) {
+            self.advance();
+            Some(self.expression()?)
+        } else {
+            None
         };
 
-        if has_initializer {
-            match self.expression() {
-                Err(e) => Err(e),
-                Ok(initializer) => {
-                    self.consume(TokenKind::SEMI, "Expect ';' after variable declaration");
-                    Ok(Stmt::Var {
-                        name,
-                        initializer: Some(initializer),
-                    })
-                }
-            }
-        } else {
-            self.consume(TokenKind::SEMI, "Expect ';' after variable declaration");
-            Ok(Stmt::Var {
-                name,
-                initializer: None,
-            })
-        }
+        self.consume(TokenKind::SEMI, "Expect ';' after variable declaration")?;
+        Ok(Stmt::Var { name, initializer })
     }
 
     //---------------------------------------------------------------
@@ -101,114 +82,66 @@ impl Parser {
                 },
                 _ => self.expression_statement(),
             },
-            _ => Err(ParseError::UnexpectedEof),
+            None => Err(ParseError::UnexpectedEof),
         }
     }
 
     fn expression_statement(&mut self) -> PResult<Stmt> {
-        let expr: Expr = match self.expression() {
-            Err(e) => return Err(e),
-            Ok(e) => e,
-        };
-
-        match self.consume(TokenKind::SEMI, "Expect ';' after an expression") {
-            Err(e) => Err(e),
-            _ => Ok(Stmt::Expr(expr)),
-        }
+        let expr = self.expression()?;
+        self.consume(TokenKind::SEMI, "Expect ';' after an expression")?;
+        Ok(Stmt::Expr(expr))
     }
 
     fn print_statement(&mut self) -> PResult<Stmt> {
         self.advance();
-        match self.expression() {
-            Err(e) => Err(e),
-            Ok(expr) => match self.consume(TokenKind::SEMI, "Expect ';' after print statement") {
-                Err(e) => Err(e),
-                _ => Ok(Stmt::Print(expr)),
-            },
-        }
+        let expr = self.expression()?;
+        self.consume(TokenKind::SEMI, "Expect ';' after print statement")?;
+        Ok(Stmt::Print(expr))
     }
 
     fn if_statement(&mut self) -> PResult<Stmt> {
         self.advance();
-        match self.expression() {
-            Err(e) => Err(e),
-            Ok(condition) => match self.block() {
-                Err(e) => Err(e),
-                Ok(if_body) => {
-                    let has_else = match self.peek() {
-                        Some(tok) => true,
-                        _ => false,
-                    };
+        let condition = self.expression()?;
+        let if_body = Box::new(self.block()?);
 
-                    if has_else {
-                        self.advance();
-                        let else_body = self.block()?;
+        let else_body = if self.compare(TokenKind::ELSE) {
+            self.advance();
+            Some(Box::new(self.block()?))
+        } else {
+            None
+        };
 
-                        return Ok(Stmt::IF {
-                            condition,
-                            if_body: Box::new(if_body),
-                            else_body: Some(Box::new(else_body)),
-                        });
-                    } else {
-                        return Ok(Stmt::IF {
-                            condition,
-                            if_body: Box::new(if_body),
-                            else_body: None,
-                        });
-                    }
-                }
-            },
-        }
+        Ok(Stmt::IF {
+            condition,
+            if_body,
+            else_body,
+        })
     }
 
     fn loop_if_statement(&mut self) -> PResult<Stmt> {
         self.advance();
         self.advance();
-
-        let condition = match self.expression() {
-            Err(e) => return Err(e),
-            Ok(condition) => condition,
-        };
-
-        let body = match self.block() {
-            Err(e) => return Err(e),
-            Ok(body) => body,
-        }; 
-
-        Ok(Stmt::LOOP_IF { condition, body: Box::new(body) })
+        let condition = self.expression()?;
+        let body = Box::new(self.block()?);
+        Ok(Stmt::LOOP_IF { condition, body })
     }
 
     fn loop_statement(&mut self) -> PResult<Stmt> {
         self.advance();
-
-        let count = match self.expression() {
-            Err(e) => return Err(e),
-            Ok(count) => count,
-        };
-        let body = match self.block() {
-            Err(e) => return Err(e),
-            Ok(body) => body,
-        };
-
-        Ok(Stmt::LOOP {
-            count,
-            body: Box::new(body),
-        })
+        let count = self.expression()?;
+        let body = Box::new(self.block()?);
+        Ok(Stmt::LOOP { count, body })
     }
 
     fn block(&mut self) -> PResult<Stmt> {
-        self.consume(TokenKind::OPEN_BRACE, "Expect '{' before block");
+        self.consume(TokenKind::OPEN_BRACE, "Expect '{' before block")?;
 
         let mut statements: Vec<Box<Stmt>> = Vec::new();
-
         while !self.is_empty() && !self.compare(TokenKind::CLOSE_BRACE) {
-            match self.declaration() {
-                Ok(statement) => statements.push(Box::new(statement)),
-                Err(e) => return Err(e),
-            }
+            statements.push(Box::new(self.declaration()?));
         }
 
-        self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after block.");
+        self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after block.")?;
         Ok(Stmt::Block(statements))
     }
 
@@ -223,7 +156,6 @@ impl Parser {
 
         if self.compare(TokenKind::EQUAL) {
             let equals = self.advance().cloned().ok_or(ParseError::UnexpectedEof)?;
-
             let value = self.assignment()?;
 
             if let Expr::Var(tok) = expr {
@@ -347,23 +279,19 @@ impl Parser {
     fn primary(&mut self) -> PResult<Expr> {
         match self.advance() {
             Some(tok) => match &tok.kind {
-                TokenKind::INT(_) | TokenKind::FLOAT(_) => Ok(Expr::Literal(tok.clone())),
-                TokenKind::TRUE | TokenKind::FALSE => Ok(Expr::Literal(tok.clone())),
-                TokenKind::STRING(v) => Ok(Expr::Literal(tok.clone())),
+                TokenKind::INT(_)
+                | TokenKind::FLOAT(_)
+                | TokenKind::TRUE
+                | TokenKind::FALSE
+                | TokenKind::STRING(_) => Ok(Expr::Literal(tok.clone())),
                 TokenKind::OPEN_PAREN => {
                     let expr = self.expression()?;
-
-                    match self.consume(TokenKind::CLOSE_PAREN, "Expect ')' after an expression") {
-                        Err(err) => Err(err),
-                        _ => Ok(Expr::Group {
-                            expr: Box::new(expr),
-                        }),
-                    }
+                    self.consume(TokenKind::CLOSE_PAREN, "Expect ')' after an expression")?;
+                    Ok(Expr::Group {
+                        expr: Box::new(expr),
+                    })
                 }
-                TokenKind::IDENT(_) => {
-                    // for now consider every identifier as a variable
-                    Ok(Expr::Var(tok.clone()))
-                }
+                TokenKind::IDENT(_) => Ok(Expr::Var(tok.clone())),
                 _ => Err(ParseError::UnexpectedToken {
                     token: tok.to_string(),
                     line: tok.span.line,
@@ -389,7 +317,7 @@ impl Parser {
         Some(c)
     }
 
-    fn consume(&mut self, token_kind: TokenKind, message: &str) -> Result<(), ParseError> {
+    fn consume(&mut self, token_kind: TokenKind, message: &str) -> PResult<()> {
         match self.peek() {
             Some(tok) if tok.kind == token_kind => {
                 self.current += 1;
@@ -405,10 +333,7 @@ impl Parser {
     }
 
     fn compare(&self, token_kind: TokenKind) -> bool {
-        match self.peek() {
-            Some(tok) if tok.kind == token_kind => true,
-            _ => false,
-        }
+        matches!(self.peek(), Some(tok) if tok.kind == token_kind)
     }
 
     fn peek(&self) -> Option<&Token> {
