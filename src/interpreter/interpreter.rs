@@ -1,9 +1,9 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    errors::{interpreter_error::InterpreterError, parse_error::ParseError},
+    errors::interpreter_error::InterpreterError,
     interpreter::{
-        environment::{self, Environment},
+        environment::Environment,
         value::Value,
     },
     lexer::token::{Token, TokenKind},
@@ -29,14 +29,12 @@ impl Interpreter {
             Stmt::Expr(expr) => self.eval_expression(expr),
             Stmt::Print(expr) => self.execute_print_statement(expr),
             Stmt::Var { name, initializer } => self.eval_var_statement(name, initializer),
-            Stmt::Block(expr) => {
-                self.execute_block(expr, Environment::new_enclosed(self.environment.clone()))
+            Stmt::Block(stmts) => {
+                self.execute_block(stmts, Environment::new_enclosed(self.environment.clone()))
             }
-            Stmt::IF {
-                condition,
-                if_body,
-                else_body,
-            } => self.execute_if_statement(condition, if_body, else_body),
+            Stmt::IF { condition, if_body, else_body } => {
+                self.execute_if_statement(condition, if_body, else_body)
+            }
             Stmt::LOOP { count, body } => self.execute_loop_statement(count, body),
             Stmt::LOOP_IF { condition, body } => self.execute_loop_if_statement(condition, body),
         }
@@ -49,63 +47,26 @@ impl Interpreter {
                 TokenKind::FLOAT(n) => Ok(Value::FLOAT(*n)),
                 TokenKind::TRUE => Ok(Value::TRUE),
                 TokenKind::FALSE => Ok(Value::FALSE),
-                TokenKind::IDENT(var) => {
-                    match self.environment.borrow_mut().get_var(
-                        &var,
-                        literal.span.line,
-                        literal.span.column,
-                    ) {
-                        Some(value) => Ok(value),
-                        None => Err(InterpreterError::UndefinedVariable {
-                            var: var.to_string(),
-                            line: literal.span.line,
-                            col: literal.span.column,
-                        }),
-                    }
-                }
                 TokenKind::STRING(s) => Ok(Value::STRING(s.to_string())),
                 _ => Err(InterpreterError::UnexpectedLiteral {
                     kind: literal.kind.clone(),
                 }),
             },
-            Expr::Unary { operator, right } => self.eval_unary(operator, right),
-            Expr::Binary {
-                left,
-                operator,
-                right,
-            } => self.eval_binary(left, operator, right),
-            Expr::Group { expr } => self.eval_expression(expr),
-            Expr::Var(identifier) => match &identifier.kind {
-                TokenKind::IDENT(name) => {
-                    (match self.environment.borrow_mut().get_var(
-                        &name,
-                        identifier.span.line,
-                        identifier.span.column,
-                    ) {
-                        Some(value) => Ok(value),
-                        None => {
-                            return Err(InterpreterError::UndefinedVariable {
-                                var: name.to_string(),
-                                line: identifier.span.line,
-                                col: identifier.span.column,
-                            });
-                        }
-                    })
+            Expr::Var(identifier) | Expr::Literal(identifier) => {
+                if let TokenKind::IDENT(name) = &identifier.kind {
+                    self.lookup_var(name, identifier.span.line, identifier.span.column)
+                } else {
+                    panic!("Expected variable identifier, but found: {:?}", identifier)
                 }
-                _ => panic!("Expected variable identifier, but found: {:?}", identifier),
-            },
-            Expr::Assign {
-                name,
-                value,
-                line,
-                col,
-            } => {
+            }
+            Expr::Unary { operator, right } => self.eval_unary(operator, right),
+            Expr::Binary { left, operator, right } => self.eval_binary(left, operator, right),
+            Expr::Group { expr } => self.eval_expression(expr),
+            Expr::Assign { name, value, line, col } => {
                 let value = self.eval_expression(value)?;
-
                 self.environment
                     .borrow_mut()
                     .assign_var(name, value.clone(), *line, *col);
-
                 Ok(value)
             }
             _ => Err(InterpreterError::UnexpectedExpr),
@@ -114,52 +75,40 @@ impl Interpreter {
 
     pub fn eval_var_statement(&mut self, name: &String, expr: &Option<Expr>) -> IResult<Value> {
         let value = match expr {
-            Some(e) => self.eval_expression(e),
-            None => Ok(Value::NULL),
+            Some(e) => self.eval_expression(e)?,
+            None => Value::NULL,
         };
-
-        match value {
-            Err(e) => Err(e),
-            Ok(val) => {
-                self.environment.borrow_mut().define_var(name, val);
-
-                Ok(Value::NULL)
-            }
-        }
+        self.environment.borrow_mut().define_var(name, value);
+        Ok(Value::NULL)
     }
 
     fn execute_print_statement(&mut self, expr: &Expr) -> IResult<Value> {
-        let value = self.eval_expression(expr);
-        match value {
-            Err(e) => return Err(e),
-            Ok(val) => {
-                match val {
-                    Value::INT(n) => println!("{}", n),
-                    Value::FLOAT(n) => println!("{}", n),
-                    Value::NULL => println!("null"),
-                    Value::TRUE => println!("true"),
-                    Value::FALSE => println!("false"),
-                    Value::STRING(ref v) => println!("{}", v),
-                    _ => println!("{:?}", val),
-                };
-                return Ok(val);
-            }
-        };
+        let val = self.eval_expression(expr)?;
+        match &val {
+            Value::INT(n) => println!("{}", n),
+            Value::FLOAT(n) => println!("{}", n),
+            Value::NULL => println!("null"),
+            Value::TRUE => println!("true"),
+            Value::FALSE => println!("false"),
+            Value::STRING(v) => println!("{}", v),
+            other => println!("{:?}", other),
+        }
+        Ok(val)
     }
 
     fn execute_block(&mut self, statements: &Vec<Box<Stmt>>, environment: Env) -> IResult<Value> {
         let previous = std::mem::replace(&mut self.environment, environment);
-        let mut return_value: Value = Value::NULL;
+        let mut result = Ok(Value::NULL);
 
         for statement in statements {
-            let value = self.execute(&statement);
-            match value {
-                _ => {}
-            };
+            result = self.execute(statement);
+            if result.is_err() {
+                break;
+            }
         }
 
         self.environment = previous;
-        Ok(return_value)
+        result
     }
 
     fn execute_if_statement(
@@ -168,68 +117,47 @@ impl Interpreter {
         if_body: &Box<Stmt>,
         else_body: &Option<Box<Stmt>>,
     ) -> IResult<Value> {
-        match self.eval_expression(condition) {
-            Err(e) => return Err(e),
-            Ok(c) => {
-                if c.is_true() {
-                    match self.execute(if_body) {
-                        Err(e) => return Err(e),
-                        Ok(v) => return Ok(v),
-                    }
-                } else {
-                    if else_body.is_some() {
-                        match self.execute(&else_body.as_ref().unwrap()) {
-                            Err(e) => return Err(e),
-                            Ok(v) => return Ok(v),
-                        }
-                    } else {
-                        return Err(InterpreterError::UnexpectedExpr);
-                    }
-                }
-            }
+        if self.eval_expression(condition)?.is_true() {
+            self.execute(if_body)
+        } else if let Some(else_body) = else_body {
+            self.execute(else_body)
+        } else {
+            Ok(Value::NULL)
         }
     }
 
     fn execute_loop_statement(&mut self, count: &Expr, body: &Box<Stmt>) -> IResult<Value> {
-        let count = match self.eval_expression(count) {
-            Err(e) => return Err(e),
-            Ok(count) => match count {
-                Value::INT(c) => c,
-                _ => return Err(InterpreterError::UnexpectedExpr),
-            },
+        let count = match self.eval_expression(count)? {
+            Value::INT(c) => c,
+            _ => return Err(InterpreterError::UnexpectedExpr),
         };
 
         for _ in 0..count {
-            match self.execute(body) {
-                Err(e) => return Err(e),
-                Ok(e) => {}
-            }
+            self.execute(body)?;
         }
 
         Ok(Value::NULL)
     }
 
     fn execute_loop_if_statement(&mut self, condition: &Expr, body: &Box<Stmt>) -> IResult<Value> {
-        loop {
-            let condition = match self.eval_expression(condition) {
-                Err(e) => return Err(e),
-                Ok(condition) => condition,
-            };
-
-            if condition.is_true() {
-                match self.execute(body) {
-                    Err(e) => return Err(e),
-                    Ok(e) => {}
-                }
-            } else {
-                break;
-            }
+        while self.eval_expression(condition)?.is_true() {
+            self.execute(body)?;
         }
-
         Ok(Value::NULL)
     }
 
     //-----------------------------------------------------------------------------
+
+    fn lookup_var(&self, name: &str, line: usize, col: usize) -> IResult<Value> {
+        self.environment
+            .borrow_mut()
+            .get_var(name, line, col)
+            .ok_or(InterpreterError::UndefinedVariable {
+                var: name.to_string(),
+                line,
+                col,
+            })
+    }
 
     fn eval_unary(&mut self, op: &Token, expr: &Expr) -> IResult<Value> {
         let value = self.eval_expression(expr)?;
