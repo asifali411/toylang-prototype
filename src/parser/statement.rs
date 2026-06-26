@@ -28,4 +28,8 @@ pub enum Stmt {
         body: Box<Stmt>,
     },
     Return(Expr),
+    Class {
+        name: String,
+        methods: Vec<Stmt>,
+    }
 }

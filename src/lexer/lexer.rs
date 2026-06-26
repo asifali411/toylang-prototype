@@ -172,6 +172,7 @@ impl Lexer {
             "loop"   => Some(TokenKind::LOOP),
             "func"   => Some(TokenKind::FUNC),
             "return" => Some(TokenKind::RETURN),
+            "class" => Some(TokenKind::CLASS),
             _        => None,
         }
     }

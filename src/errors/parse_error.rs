@@ -26,6 +26,9 @@ pub enum ParseError {
     #[error("Expected function name after func keyword at {line}:{col}")]
     ExpectedFunctionName { line: usize, col: usize },
 
+    #[error("Expected class name after class keyword at {line}:{col}")]
+    ExpectedClassName { line: usize, col: usize },
+
     #[error("Invalid statement, {message} at {line}:{col}")]
     InvalidStatement {
         message: String,
@@ -77,6 +80,16 @@ impl ParseError {
 
                 eprintln!(
                     "{}: Expected function name after func keyword \n{}\n",
+                    prefix, loc
+                );
+            }
+            ParseError::ExpectedClassName { line, col } => {
+                let loc = format!(" at line: {}, col: {} ", line, col)
+                    .black()
+                    .on_green();
+
+                eprintln!(
+                    "{}: Expected class name after class keyword \n{}\n",
                     prefix, loc
                 );
             }

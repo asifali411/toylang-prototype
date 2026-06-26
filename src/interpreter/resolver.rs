@@ -67,6 +67,11 @@ impl Resolver {
         self.end_scope();
       }
 
+      Stmt::Class { name, methods } => {
+        self.declare(name);
+        self.define(name);
+      }
+
       Stmt::Return(expr) => self.resolve_expr(expr),
 
       Stmt::If { condition, if_body, else_body } => {

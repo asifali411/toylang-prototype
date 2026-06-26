@@ -41,6 +41,7 @@ impl Parser {
         match self.peek().cloned().ok_or(ParseError::UnexpectedEof)?.kind {
             TokenKind::VAR => self.var_declaration(),
             TokenKind::FUNC => self.func_declaration(),
+            TokenKind::CLASS => self.class_declaration(),
             _ => self.statement(),
         }
     }
@@ -121,6 +122,35 @@ impl Parser {
             parameters,
             body: Box::new(body),
         })
+    }
+
+    fn class_declaration(&mut self) -> PResult<Stmt> {
+        self.advance();
+        let name = match self.peek() {
+            Some(tok) => match &tok.kind {
+                TokenKind::IDENT(v) => v.clone(),
+                _ => {
+                    return Err(ParseError::ExpectedClassName {
+                        line: tok.span.line,
+                        col: tok.span.column,
+                    });
+                }
+            },
+            None => return Err(ParseError::UnexpectedEof),
+        };
+        self.advance();
+        self.consume(TokenKind::OPEN_BRACE, "Expect '{' before class body")?;
+
+        let mut methods: Vec<Stmt> = Vec::new();
+
+        while !self.is_empty() && !self.compare(TokenKind::CLOSE_BRACE) {
+            methods.push(self.func_declaration()?);
+        }
+
+        self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after class body")?;
+        
+        Ok(Stmt::Class { name, methods })
+
     }
 
     // ---------------------------------------------------------------

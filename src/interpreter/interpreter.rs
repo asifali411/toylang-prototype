@@ -2,7 +2,7 @@ use std::{arch::global_asm, cell::RefCell, collections::HashMap, os::windows::ff
 
 use crate::{
     errors::interpreter_error::InterpreterError, interpreter::{
-        environment::Environment, function::Function, signal::Signal, value::Value,
+        class::Class, environment::Environment, function::Function, signal::Signal, value::Value,
     }, lexer::token::{Token, TokenKind}, parser::{expression::Expr, statement::Stmt},
 };
 
@@ -62,6 +62,9 @@ impl Interpreter {
             Stmt::Return(expr) => {
                 let value = self.eval_expression(expr).map_err(Signal::Error)?;
                 Err(Signal::Return(value))
+            }
+            Stmt::Class { name, methods } => {
+                self.eval_class_statement(name, methods).map_err(Signal::Error)
             }
         }
     }
@@ -124,6 +127,13 @@ impl Interpreter {
     ) -> IResult<Value> {
         let func = Function::new(parameters.to_vec(), body.clone(), &self.environment);
         self.environment.borrow_mut().define_func(name, func);
+        Ok(Value::NULL)
+    }
+
+    pub fn eval_class_statement(&mut self, name: &str, methods: &Vec<Stmt>) -> IResult<Value> {
+        let class = Class::new(name.to_string());
+        self.environment.borrow_mut().define_class(name, class);
+
         Ok(Value::NULL)
     }
 

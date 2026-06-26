@@ -1,4 +1,4 @@
-use crate::{errors::interpreter_error::InterpreterError, interpreter::{function::Function, value::Value}, lexer::token::Token, parser::statement::Stmt};
+use crate::{errors::interpreter_error::InterpreterError, interpreter::{class::Class, function::Function, value::Value}, lexer::token::Token, parser::statement::Stmt};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 type Env = Rc<RefCell<Environment>>;
@@ -7,6 +7,7 @@ type Env = Rc<RefCell<Environment>>;
 pub struct Environment {
     variables: HashMap<String, Value>,
     functions: HashMap<String, Function>,
+    classes: HashMap<String, Class>,
     enclosing: Option<Env>,
 }
 
@@ -15,6 +16,7 @@ impl Environment {
         Rc::new(RefCell::new(Self {
             variables: HashMap::new(),
             functions: HashMap::new(),
+            classes: HashMap::new(),
             enclosing: None,
         }))
     }
@@ -23,6 +25,7 @@ impl Environment {
         Rc::new(RefCell::new(Self {
             variables: HashMap::new(),
             functions: HashMap::new(),
+            classes: HashMap::new(),
             enclosing: Some(enclosing),
         }))
     }
@@ -105,4 +108,11 @@ impl Environment {
             .as_ref()
             .and_then(|env| env.borrow().get_func(name))
     }
+
+    //--------------------------------------------------------------------------
+
+    pub fn define_class(&mut self, name: impl Into<String>, class: Class) {
+        self.classes.insert(name.into(), class);
+    }
+    
 }
