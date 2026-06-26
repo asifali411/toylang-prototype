@@ -1,4 +1,4 @@
-use crate::lexer::token::TokenKind;
+use crate::{errors::interpreter_error::InterpreterError::InvalidParameter, lexer::token::TokenKind};
 use colored::Colorize;
 use thiserror::Error;
 
@@ -27,7 +27,13 @@ pub enum InterpreterError {
     ArityMismatch {
         expected: usize,
         got: usize,
-    }
+    },
+
+    #[error("Cannot divide by zero")]
+    DivisionByZero,
+
+    #[error("Invalid parameter '{:?}'", kind)]
+    InvalidParameter { kind: String },
 }
 
 impl InterpreterError {
@@ -55,6 +61,12 @@ impl InterpreterError {
             }
             InterpreterError::ArityMismatch { expected, got } => {
                 eprintln!("Expected {expected} arguments but recieved {got} arguments");
+            },
+            InterpreterError::DivisionByZero => {
+                eprintln!("{}: Cannot divide by zero", prefix);
+            }
+            InterpreterError::InvalidParameter { kind} => {
+                eprintln!("Invalid parameter: '{:?}'", kind.yellow());
             }
         }
     }

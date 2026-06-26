@@ -1,14 +1,9 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    errors::interpreter_error::InterpreterError,
-    interpreter::{
-        environment::Environment,
-        value::Value,
-        function::Function,
-    },
-    lexer::token::{Token, TokenKind},
-    parser::{expression::Expr, statement::Stmt},
+    errors::interpreter_error::InterpreterError, interpreter::{
+        environment::Environment, function::Function, signal::Signal, value::Value,
+    }, lexer::token::{Token, TokenKind}, parser::{expression::Expr, statement::Stmt},
 };
 
 type IResult<T> = Result<T, InterpreterError>;
@@ -26,20 +21,39 @@ impl Interpreter {
     }
 
     pub fn execute(&mut self, statement: &Stmt) -> IResult<Value> {
+        match self.execute_stmt(statement) {
+            Ok(v) => Ok(v),
+            Err(Signal::Error(e)) => Err(e),
+            Err(Signal::Return(v)) => Ok(v),
+        }
+    }
+
+    fn execute_stmt(&mut self, statement: &Stmt) -> Result<Value, Signal> {
         match statement {
-            Stmt::Expr(expr) => self.eval_expression(expr),
-            Stmt::Print(expr) => self.execute_print_statement(expr),
-            Stmt::Var { name, initializer } => self.eval_var_statement(name, initializer),
+            Stmt::Expr(expr) => self.eval_expression(expr).map_err(Signal::Error),
+            Stmt::Print(expr) => self.execute_print_statement(expr).map_err(Signal::Error),
+            Stmt::Var { name, initializer } => {
+                self.eval_var_statement(name, initializer).map_err(Signal::Error)
+            }
             Stmt::Block(stmts) => {
                 self.execute_block(stmts, Environment::new_enclosed(self.environment.clone()))
             }
             Stmt::If { condition, if_body, else_body } => {
                 self.execute_if_statement(condition, if_body, else_body)
             }
-            Stmt::Loop { count, body } => self.execute_loop_statement(count, body),
-            Stmt::LoopIf { condition, body } => self.execute_loop_if_statement(condition, body),
-            Stmt::Func { name, parameters, body } => self.eval_func_statement(name, parameters, body),
-            Stmt::Return(expr) => self.eval_return_statement(expr),
+            Stmt::Loop { count, body } => {
+                self.execute_loop_statement(count, body)
+            }
+            Stmt::LoopIf { condition, body } => {
+                self.execute_loop_if_statement(condition, body)
+            }
+            Stmt::Func { name, parameters, body } => {
+                self.eval_func_statement(name, parameters, body).map_err(Signal::Error)
+            }
+            Stmt::Return(expr) => {
+                let value = self.eval_expression(expr).map_err(Signal::Error)?;
+                Err(Signal::Return(value))
+            }
         }
     }
 
@@ -55,11 +69,14 @@ impl Interpreter {
                     kind: literal.kind.clone(),
                 }),
             },
-            Expr::Var(identifier) | Expr::Literal(identifier) => {
+            Expr::Var(identifier) => {
                 if let TokenKind::IDENT(name) = &identifier.kind {
                     self.lookup_var(name, identifier.span.line, identifier.span.column)
                 } else {
-                    panic!("Expected variable identifier, but found: {:?}", identifier)
+                    panic!(
+                        "Expected variable identifier, but found: {:?}",
+                        identifier
+                    )
                 }
             }
             Expr::Unary { operator, right } => self.eval_unary(operator, right),
@@ -69,15 +86,19 @@ impl Interpreter {
                 let value = self.eval_expression(value)?;
                 self.environment
                     .borrow_mut()
-                    .assign_var(name, value.clone(), *line, *col);
+                    .assign_var(name, value.clone(), *line, *col)?;
                 Ok(value)
-            },
+            }
             Expr::Call { callee, arguments } => self.eval_call(callee, arguments),
             _ => Err(InterpreterError::UnexpectedExpr),
         }
     }
 
-    pub fn eval_var_statement(&mut self, name: &String, expr: &Option<Expr>) -> IResult<Value> {
+    pub fn eval_var_statement(
+        &mut self,
+        name: &String,
+        expr: &Option<Expr>,
+    ) -> IResult<Value> {
         let value = match expr {
             Some(e) => self.eval_expression(e)?,
             None => Value::NULL,
@@ -86,11 +107,14 @@ impl Interpreter {
         Ok(Value::NULL)
     }
 
-    pub fn eval_func_statement(&mut self, name: &String, parameters: &Vec<Token>, body: &Box<Stmt>) -> IResult<Value> {
+    pub fn eval_func_statement(
+        &mut self,
+        name: &String,
+        parameters: &Vec<Token>,
+        body: &Box<Stmt>,
+    ) -> IResult<Value> {
         let func = Function::new(parameters.to_vec(), body.clone(), &self.environment);
-
         self.environment.borrow_mut().define_func(name, func);
-
         Ok(Value::NULL)
     }
 
@@ -108,20 +132,19 @@ impl Interpreter {
         Ok(val)
     }
 
-    pub fn execute_block(&mut self, statements: &Vec<Box<Stmt>>, environment: Env) -> IResult<Value> {
+    pub fn execute_block(
+        &mut self,
+        statements: &Vec<Box<Stmt>>,
+        environment: Env,
+    ) -> Result<Value, Signal> {
         let previous = std::mem::replace(&mut self.environment, environment);
-        let mut result = Ok(Value::NULL);
+        let mut result: Result<Value, Signal> = Ok(Value::NULL);
 
         for statement in statements {
-            result = self.execute(statement);
+            result = self.execute_stmt(statement);
             if result.is_err() {
                 break;
             }
-
-            match &**statement {
-                Stmt::Return(_) => break,
-                _ => {},
-            };
         }
 
         self.environment = previous;
@@ -133,32 +156,48 @@ impl Interpreter {
         condition: &Expr,
         if_body: &Box<Stmt>,
         else_body: &Option<Box<Stmt>>,
-    ) -> IResult<Value> {
-        if self.eval_expression(condition)?.is_true() {
-            self.execute(if_body)
+    ) -> Result<Value, Signal> {
+        if self
+            .eval_expression(condition)
+            .map_err(Signal::Error)?
+            .is_true()
+        {
+            self.execute_stmt(if_body)
         } else if let Some(else_body) = else_body {
-            self.execute(else_body)
+            self.execute_stmt(else_body)
         } else {
             Ok(Value::NULL)
         }
     }
 
-    fn execute_loop_statement(&mut self, count: &Expr, body: &Box<Stmt>) -> IResult<Value> {
-        let count = match self.eval_expression(count)? {
+    fn execute_loop_statement(
+        &mut self,
+        count: &Expr,
+        body: &Box<Stmt>,
+    ) -> Result<Value, Signal> {
+        let count = match self.eval_expression(count).map_err(Signal::Error)? {
             Value::INT(c) => c,
-            _ => return Err(InterpreterError::UnexpectedExpr),
+            _ => return Err(Signal::Error(InterpreterError::UnexpectedExpr)),
         };
 
         for _ in 0..count {
-            self.execute(body)?;
+            self.execute_stmt(body)?;
         }
 
         Ok(Value::NULL)
     }
 
-    fn execute_loop_if_statement(&mut self, condition: &Expr, body: &Box<Stmt>) -> IResult<Value> {
-        while self.eval_expression(condition)?.is_true() {
-            self.execute(body)?;
+    fn execute_loop_if_statement(
+        &mut self,
+        condition: &Expr,
+        body: &Box<Stmt>,
+    ) -> Result<Value, Signal> {
+        while self
+            .eval_expression(condition)
+            .map_err(Signal::Error)?
+            .is_true()
+        {
+            self.execute_stmt(body)?;
         }
         Ok(Value::NULL)
     }
@@ -167,7 +206,7 @@ impl Interpreter {
 
     fn lookup_var(&self, name: &str, line: usize, col: usize) -> IResult<Value> {
         self.environment
-            .borrow_mut()
+            .borrow()
             .get_var(name, line, col)
             .ok_or(InterpreterError::UndefinedVariable {
                 var: name.to_string(),
@@ -188,11 +227,17 @@ impl Interpreter {
     fn eval_binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> IResult<Value> {
         let left = self.eval_expression(left)?;
         let right = self.eval_expression(right)?;
+
         match op.kind {
+            TokenKind::SLASH => {
+                if matches!(right, Value::INT(0)) {
+                    return Err(InterpreterError::DivisionByZero);
+                }
+                Ok(left / right)
+            }
             TokenKind::PLUS => Ok(left + right),
             TokenKind::MINUS => Ok(left - right),
             TokenKind::STAR => Ok(left * right),
-            TokenKind::SLASH => Ok(left / right),
             TokenKind::LESS => Ok(left.lt(&right)),
             TokenKind::LESS_EQ => Ok(left.lt_eq(&right)),
             TokenKind::GREAT => Ok(left.gt(&right)),
@@ -211,29 +256,25 @@ impl Interpreter {
                 } else {
                     return Err(InterpreterError::UnexpectedExpr);
                 }
-            },
+            }
             _ => return Err(InterpreterError::UnexpectedExpr),
         };
 
-        let func = 
-            self.environment
+        let func = self
+            .environment
             .borrow()
             .get_func(&name)
-            .ok_or_else(|| InterpreterError::UndefinedVariable { 
-                var: name.clone(), line: 0, col: 0, 
+            .ok_or_else(|| InterpreterError::UndefinedVariable {
+                var: name.clone(),
+                line: 0,
+                col: 0,
             })?;
 
         let args: Vec<Value> = arguments
-        .iter()
-        .map(|a| self.eval_expression(a))
-        .collect::<IResult<_>>()?;
+            .iter()
+            .map(|a| self.eval_expression(a))
+            .collect::<IResult<_>>()?;
 
         func.call(self, args)
     }
-
-    fn eval_return_statement(&mut self, expr: &Expr) -> IResult<Value> {
-        let value = self.eval_expression(expr)?;
-        Ok(value)
-    }
-
 }
