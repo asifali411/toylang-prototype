@@ -2,8 +2,8 @@ use std::{arch::global_asm, cell::RefCell, collections::HashMap, os::windows::ff
 
 use crate::{
     errors::interpreter_error::InterpreterError::{self, UnexpectedExpr}, interpreter::{
-        class::class::Class, environment::Environment, function::Function, signal::Signal, value::Value,
-    }, lexer::token::{Token, TokenKind}, parser::{expression::Expr, statement::Stmt},
+        class::class::Class, environment::Environment, function::Function, signal::Signal, value::Value::{self, OBJECT},
+    }, lexer::token::{Token, TokenKind}, parser::{expression::Expr::{self, Get}, statement::Stmt},
 };
 
 type IResult<T> = Result<T, InterpreterError>;
@@ -102,7 +102,8 @@ impl Interpreter {
                 Ok(value)
             }
             Expr::Call { callee, arguments, line, col } => self.eval_call(callee, arguments, line, col),
-            _ => Err(InterpreterError::UnexpectedExpr),
+            Expr::Get { object, name, line, col } => self.eval_get(object, name, line, col),
+            _ => return Err(InterpreterError::UnexpectedExpr),
         }
     }
 
@@ -341,5 +342,14 @@ impl Interpreter {
             });
         }
 
+    }
+    
+    fn eval_get(&mut self, object: &Expr, name: &String, line: &usize, col: &usize) -> IResult<Value> {
+        let value = self.eval_expression(object)?;
+        println!("{:?}", value);
+        match value {
+            OBJECT(obj) => Ok(obj.get(name.to_string(), *line, *col)?.clone()),
+            _ => Err(InterpreterError::InvalidStatement { message: "Only objects have properties".to_string() }),
+        }
     }
 }

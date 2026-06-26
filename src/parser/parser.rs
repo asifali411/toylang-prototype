@@ -408,12 +408,26 @@ impl Parser {
     fn call(&mut self) -> PResult<Expr> {
         let mut expr = self.primary()?;
 
-        while self.compare(TokenKind::OPEN_PAREN) {
-            if let Some(tok) = self.advance() {
-                let tok = tok.clone();
-                expr = self.finish_call(expr, tok.span.line, tok.span.column)?;
+        loop { 
+            if self.compare(TokenKind::OPEN_PAREN) {
+                if let Some(tok) = self.advance() {
+                    let tok = tok.clone();
+                    expr = self.finish_call(expr, tok.span.line, tok.span.column)?;
+                } else {
+                    return Err(ParseError::UnexpectedEof);
+                }
+            } else if self.compare(TokenKind::DOT) {
+                self.advance();
+                let tok = self.consume_ident("Expect property name after '.'")?;
+
+                match tok.kind {
+                    TokenKind::IDENT(name) => {
+                        return Ok(Expr::Get { object: Box::new(expr), name, line: tok.span.line, col: tok.span.column })
+                    },
+                    _ => {},
+                };
             } else {
-                return Err(ParseError::UnexpectedEof);
+                break;
             }
         }
 

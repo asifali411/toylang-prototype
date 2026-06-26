@@ -12,8 +12,8 @@ impl Class {
     }
   }
 
-  pub fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Instance {
+  pub fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value {
     let instance = Instance::new(self.clone());
-    instance
+    Value::OBJECT(instance)
   }
 }

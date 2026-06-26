@@ -30,6 +30,13 @@ pub enum InterpreterError {
         col: usize,
     },
 
+    #[error("Undefined property '{prop}' at {line}:{col}")]
+    UndefinedProperty {
+        prop: String,
+        line: usize,
+        col: usize,
+    },
+
     #[error("Expected {expected} arguments but recieved {got} arguments")]
     ArityMismatch {
         expected: usize,
@@ -41,6 +48,9 @@ pub enum InterpreterError {
 
     #[error("Invalid parameter '{:?}'", kind)]
     InvalidParameter { kind: String },
+
+    #[error("Invalid statement {message}")]
+    InvalidStatement { message: String }
 }
 
 impl InterpreterError {
@@ -73,6 +83,13 @@ impl InterpreterError {
 
                 eprintln!("{}: Undefined function '{}'\n{}\n", prefix, func, loc);
             }
+            InterpreterError::UndefinedProperty { prop, line, col } => {
+                let loc = format!(" at line: {}, col: {} ", line, col)
+                    .black()
+                    .on_green();
+
+                eprintln!("{}: Undefined property '{}'\n{}\n", prefix, prop, loc);
+            }
             InterpreterError::ArityMismatch { expected, got } => {
                 eprintln!("Expected {expected} arguments but recieved {got} arguments");
             },
@@ -81,6 +98,9 @@ impl InterpreterError {
             }
             InterpreterError::InvalidParameter { kind} => {
                 eprintln!("Invalid parameter: '{:?}'", kind.yellow());
+            }
+            InterpreterError::InvalidStatement { message } => {
+                eprintln!("Invalid statement {message}");
             }
         }
     }

@@ -62,6 +62,7 @@ pub enum TokenKind {
     OPEN_BRACE,
     CLOSE_BRACE,
 
+    DOT,
     COMMA,
     SEMI,
     EOF,

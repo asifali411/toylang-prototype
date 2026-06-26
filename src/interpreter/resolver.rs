@@ -127,6 +127,9 @@ impl Resolver {
             self.resolve_expr(callee);
             for a in arguments { self.resolve_expr(a); }
         }
+        Expr::Get { object, .. } => {
+          self.resolve_expr(object);
+        }
         _ => {}
     }
 }

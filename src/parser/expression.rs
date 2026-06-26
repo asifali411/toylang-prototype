@@ -27,5 +27,11 @@ pub enum Expr {
         arguments: Vec<Box<Expr>>,
         line: usize,
         col: usize,
-    }
+    },
+    Get {
+        object: Box<Expr>,
+        name: String,
+        line: usize,
+        col: usize,
+    },
 }
