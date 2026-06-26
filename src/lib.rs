@@ -9,46 +9,25 @@ mod parser;
 use interpreter::Interpreter;
 use lexer::Lexer;
 use parser::Parser;
+use errors::lang_error::LangError;
 
 pub fn run(source: String) -> ExitCode {
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize();
-
-    match result {
-        Ok(tokens) => {
-            //println!("{:?}", tokens);
-
-            let mut parser = Parser::new(&tokens);
-            match parser.parse() {
-                Ok(statements) => {
-                    //println!("{:#?}", statements);
-
-                    let mut interpreter = Interpreter::new();
-                    for statement in statements {
-                        let result = interpreter.execute(&statement);
-
-                        match result {
-                            Ok(res) => {
-                                //println!("{:?}", res);
-                            }
-                            Err(e) => {
-                                e.display();
-                                return ExitCode::FAILURE;
-                            }
-                        }
-                    }
-                }
-                Err(e) => {
-                    e.display();
-                    return ExitCode::FAILURE;
-                }
-            }
-        }
+    match try_run(source) {
+        Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
             e.display();
-            return ExitCode::FAILURE;
+            ExitCode::FAILURE
         }
     }
+}
 
-    ExitCode::SUCCESS
+fn try_run(source: String) -> Result<(), LangError> {
+    let mut lexer = Lexer::new(source);
+    let tokens = lexer.tokenize()?;
+    let statements = Parser::new(&tokens).parse()?;
+    let mut interpreter = Interpreter::new();
+    for statement in statements {
+        interpreter.execute(&statement)?;
+    }
+    Ok(())
 }
