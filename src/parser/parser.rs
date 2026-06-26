@@ -7,6 +7,8 @@ use crate::{
 
 type PResult<T> = Result<T, ParseError>;
 
+const MAX_ARGUMENTS: usize = 255;
+
 #[derive(Debug, Clone)]
 pub struct Parser {
     tokens: Vec<Token>,
@@ -14,7 +16,7 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(tokens: &Vec<Token>) -> Parser {
+    pub fn new(tokens: &[Token]) -> Self {
         Self {
             tokens: tokens.to_vec(),
             current: 0,
@@ -31,7 +33,9 @@ impl Parser {
         Ok(statements)
     }
 
-    //---------------------------------------------------------------
+    // ---------------------------------------------------------------
+    // Declarations
+    // ---------------------------------------------------------------
 
     fn declaration(&mut self) -> PResult<Stmt> {
         match self.peek().cloned().ok_or(ParseError::UnexpectedEof)?.kind {
@@ -85,6 +89,7 @@ impl Parser {
             None => return Err(ParseError::UnexpectedEof),
         };
         self.advance();
+
         self.consume(TokenKind::OPEN_PAREN, "Expect '(' after function name")?;
 
         let mut parameters: Vec<Token> = Vec::new();
@@ -94,11 +99,20 @@ impl Parser {
 
             while self.compare(TokenKind::COMMA) {
                 self.advance();
-                // TODO: handle max parameter length here
+
+                if parameters.len() >= MAX_ARGUMENTS {
+                    let tok = self.peek().ok_or(ParseError::UnexpectedEof)?;
+                    return Err(ParseError::InvalidStatement {
+                        message: format!("Can't have more than {MAX_ARGUMENTS} parameters"),
+                        line: tok.span.line,
+                        col: tok.span.column,
+                    });
+                }
 
                 parameters.push(self.consume_ident("Expect parameter name")?);
             }
         }
+
         self.consume(TokenKind::CLOSE_PAREN, "Expect ')' after parameters")?;
         let body = self.block()?;
 
@@ -109,7 +123,9 @@ impl Parser {
         })
     }
 
-    //---------------------------------------------------------------
+    // ---------------------------------------------------------------
+    // Statements
+    // ---------------------------------------------------------------
 
     fn statement(&mut self) -> PResult<Stmt> {
         match self.peek() {
@@ -130,7 +146,7 @@ impl Parser {
 
     fn expression_statement(&mut self) -> PResult<Stmt> {
         let expr = self.expression()?;
-        self.consume(TokenKind::SEMI, "Expect ';' after an expression")?;
+        self.consume(TokenKind::SEMI, "Expect ';' after expression")?;
         Ok(Stmt::Expr(expr))
     }
 
@@ -161,8 +177,8 @@ impl Parser {
     }
 
     fn loop_if_statement(&mut self) -> PResult<Stmt> {
-        self.advance();
-        self.advance();
+        self.consume(TokenKind::LOOP, "Expect 'loop'")?;
+        self.consume(TokenKind::IF, "Expect 'if' after 'loop'")?;
         let condition = self.expression()?;
         let body = Box::new(self.block()?);
         Ok(Stmt::LoopIf { condition, body })
@@ -190,12 +206,12 @@ impl Parser {
             statements.push(Box::new(self.declaration()?));
         }
 
-        self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after block.")?;
+        self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after block")?;
         Ok(Stmt::Block(statements))
     }
-    
+
     fn finish_call(&mut self, callee: Expr) -> PResult<Expr> {
-        let mut arguments = Vec::new();
+        let mut arguments: Vec<Box<Expr>> = Vec::new();
 
         if !self.compare(TokenKind::CLOSE_PAREN) {
             arguments.push(Box::new(self.expression()?));
@@ -203,23 +219,30 @@ impl Parser {
             while self.compare(TokenKind::COMMA) {
                 self.advance();
 
-                if arguments.len() >= 255 {
-                    panic!("Can't have more than 255 arguments");
+                if arguments.len() >= MAX_ARGUMENTS {
+                    let tok = self.peek().ok_or(ParseError::UnexpectedEof)?;
+                    return Err(ParseError::InvalidStatement {
+                        message: format!("Can't have more than {MAX_ARGUMENTS} arguments"),
+                        line: tok.span.line,
+                        col: tok.span.column,
+                    });
                 }
 
                 arguments.push(Box::new(self.expression()?));
             }
         }
-        
-        self.consume(TokenKind::CLOSE_PAREN, "Expect ')' after arguments");
-        
+
+        self.consume(TokenKind::CLOSE_PAREN, "Expect ')' after arguments")?;
+
         Ok(Expr::Call {
             callee: Box::new(callee),
             arguments,
         })
     }
 
-    //---------------------------------------------------------------
+    // ---------------------------------------------------------------
+    // Expressions
+    // ---------------------------------------------------------------
 
     fn expression(&mut self) -> PResult<Expr> {
         self.assignment()
@@ -229,7 +252,7 @@ impl Parser {
         let expr = self.equality()?;
 
         if self.compare(TokenKind::EQUAL) {
-            let equals = self.advance().cloned().ok_or(ParseError::UnexpectedEof)?;
+            let equals = self.advance_token()?;
             let value = self.assignment()?;
 
             if let Expr::Var(tok) = expr {
@@ -259,7 +282,7 @@ impl Parser {
         while let Some(op) = self.peek() {
             match op.kind {
                 TokenKind::NOT_EQ | TokenKind::EQ_EQ => {
-                    let op = self.advance().unwrap().clone();
+                    let op = self.advance_token()?;
                     let right = self.comparison()?;
                     expr = Expr::Binary {
                         left: Box::new(expr),
@@ -280,7 +303,7 @@ impl Parser {
         while let Some(op) = self.peek() {
             match op.kind {
                 TokenKind::LESS | TokenKind::GREAT | TokenKind::LESS_EQ | TokenKind::GREAT_EQ => {
-                    let op = self.advance().unwrap().clone();
+                    let op = self.advance_token()?;
                     let right = self.term()?;
                     expr = Expr::Binary {
                         left: Box::new(expr),
@@ -301,7 +324,7 @@ impl Parser {
         while let Some(op) = self.peek() {
             match op.kind {
                 TokenKind::PLUS | TokenKind::MINUS => {
-                    let op = self.advance().unwrap().clone();
+                    let op = self.advance_token()?;
                     let right = self.factor()?;
                     expr = Expr::Binary {
                         left: Box::new(expr),
@@ -322,7 +345,7 @@ impl Parser {
         while let Some(op) = self.peek() {
             match op.kind {
                 TokenKind::STAR | TokenKind::SLASH => {
-                    let op = self.advance().unwrap().clone();
+                    let op = self.advance_token()?;
                     let right = self.unary()?;
                     expr = Expr::Binary {
                         left: Box::new(expr),
@@ -340,7 +363,7 @@ impl Parser {
     fn unary(&mut self) -> PResult<Expr> {
         if let Some(tok) = self.peek() {
             if tok.kind == TokenKind::MINUS || tok.kind == TokenKind::NOT {
-                let op = self.advance().unwrap().clone();
+                let op = self.advance_token()?;
                 return Ok(Expr::Unary {
                     operator: op,
                     right: Box::new(self.unary()?),
@@ -353,14 +376,9 @@ impl Parser {
     fn call(&mut self) -> PResult<Expr> {
         let mut expr = self.primary()?;
 
-        while let Some(op) = self.peek() {
-            match op.kind {
-                TokenKind::OPEN_PAREN => {
-                    self.advance();
-                    expr = self.finish_call(expr)?;
-                },
-                _ => break,
-            }
+        while self.compare(TokenKind::OPEN_PAREN) {
+            self.advance();
+            expr = self.finish_call(expr)?;
         }
 
         Ok(expr)
@@ -376,7 +394,7 @@ impl Parser {
                 | TokenKind::STRING(_) => Ok(Expr::Literal(tok.clone())),
                 TokenKind::OPEN_PAREN => {
                     let expr = self.expression()?;
-                    self.consume(TokenKind::CLOSE_PAREN, "Expect ')' after an expression")?;
+                    self.consume(TokenKind::CLOSE_PAREN, "Expect ')' after expression")?;
                     Ok(Expr::Group {
                         expr: Box::new(expr),
                     })
@@ -392,19 +410,37 @@ impl Parser {
         }
     }
 
-    //---------------------------------------------------------------
+    // ---------------------------------------------------------------
+    // Primitives
+    // ---------------------------------------------------------------
 
     fn is_empty(&self) -> bool {
-        self.current >= self.tokens.len() || self.tokens[self.current].kind == TokenKind::EOF
+        self.peek().is_none()
+    }
+
+    fn peek(&self) -> Option<&Token> {
+        self.tokens
+            .get(self.current)
+            .filter(|t| t.kind != TokenKind::EOF)
+    }
+
+    fn peek_next(&self) -> Option<&Token> {
+        self.tokens
+            .get(self.current + 1)
+            .filter(|t| t.kind != TokenKind::EOF)
     }
 
     fn advance(&mut self) -> Option<&Token> {
         if self.is_empty() {
             return None;
         }
-        let c = &self.tokens[self.current];
+        let tok = &self.tokens[self.current];
         self.current += 1;
-        Some(c)
+        Some(tok)
+    }
+
+    fn advance_token(&mut self) -> PResult<Token> {
+        self.advance().cloned().ok_or(ParseError::UnexpectedEof)
     }
 
     fn consume(&mut self, token_kind: TokenKind, message: &str) -> PResult<()> {
@@ -425,7 +461,7 @@ impl Parser {
     fn consume_ident(&mut self, message: &str) -> PResult<Token> {
         match self.peek() {
             Some(tok) => match &tok.kind {
-                TokenKind::IDENT(_) => Ok(self.advance().unwrap().clone()),
+                TokenKind::IDENT(_) => self.advance_token(),
                 _ => Err(ParseError::ExpectedToken {
                     message: message.to_string(),
                     line: tok.span.line,
@@ -438,16 +474,5 @@ impl Parser {
 
     fn compare(&self, token_kind: TokenKind) -> bool {
         matches!(self.peek(), Some(tok) if tok.kind == token_kind)
-    }
-
-    fn peek(&self) -> Option<&Token> {
-        if self.is_empty() {
-            return None;
-        }
-        self.tokens.get(self.current)
-    }
-
-    fn peek_next(&self) -> Option<&Token> {
-        self.tokens.get(self.current + 1)
     }
 }
