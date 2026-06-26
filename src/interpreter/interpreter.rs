@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{arch::global_asm, cell::RefCell, collections::HashMap, os::windows::ffi::EncodeWide, rc::Rc};
 
 use crate::{
     errors::interpreter_error::InterpreterError, interpreter::{
@@ -11,13 +11,22 @@ type Env = Rc<RefCell<Environment>>;
 
 pub struct Interpreter {
     pub environment: Env,
+    pub globals: Env,
+    pub locals: HashMap<*const Expr, usize>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
+        let globals = Environment::new();
         Self {
-            environment: Environment::new(),
+            environment: globals.clone(),
+            globals,
+            locals: HashMap::new(),
         }
+    }
+
+    pub fn resolve(&mut self, locals: HashMap<*const Expr, usize>) {
+        self.locals = locals;
     }
 
     pub fn execute(&mut self, statement: &Stmt) -> IResult<Value> {
@@ -71,7 +80,7 @@ impl Interpreter {
             },
             Expr::Var(identifier) => {
                 if let TokenKind::IDENT(name) = &identifier.kind {
-                    self.lookup_var(name, identifier.span.line, identifier.span.column)
+                    self.lookup_var(name, expr, identifier.span.line, identifier.span.column)
                 } else {
                     panic!(
                         "Expected variable identifier, but found: {:?}",
@@ -204,15 +213,14 @@ impl Interpreter {
 
     //-----------------------------------------------------------------------------
 
-    fn lookup_var(&self, name: &str, line: usize, col: usize) -> IResult<Value> {
-        self.environment
-            .borrow()
-            .get_var(name, line, col)
-            .ok_or(InterpreterError::UndefinedVariable {
-                var: name.to_string(),
-                line,
-                col,
-            })
+    fn lookup_var(&self, name: &str, expr: &Expr, line: usize, col: usize) -> IResult<Value> {
+        if let Some(&depth) = self.locals.get(&(expr as *const Expr)) {
+            self.environment.borrow().get_at(depth, name)
+                .ok_or(InterpreterError::UndefinedVariable { var: name.into(), line, col })
+        } else {
+            self.globals.borrow().get_var(name, line, col)
+                .ok_or(InterpreterError::UndefinedVariable { var: name.into(), line, col })
+        }
     }
 
     fn eval_unary(&mut self, op: &Token, expr: &Expr) -> IResult<Value> {

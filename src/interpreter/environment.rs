@@ -29,6 +29,30 @@ impl Environment {
 
     //--------------------------------------------------------------------------
 
+    pub fn get_at(&self, depth: usize, name: &str) -> Option<Value> {
+        if depth == 0 {
+            return self.variables.get(name).cloned();
+        }
+
+        self.enclosing
+            .as_ref()
+            .and_then(|e| e.borrow().get_at(depth - 1, name))
+    }
+
+    pub fn assign_at(
+        &mut self, depth: usize, name: &str, value: Value,
+    ) -> Option<()> {
+        if depth == 0 {
+            self.variables.insert(name.to_string(), value);
+            return Some(());
+        }
+        self.enclosing
+            .as_ref()
+            .and_then(|e| e.borrow_mut().assign_at(depth - 1, name, value))
+    }
+
+    //--------------------------------------------------------------------------
+
     pub fn define_var(&mut self, name: impl Into<String>, value: Value) {
         self.variables.insert(name.into(), value);
     }
