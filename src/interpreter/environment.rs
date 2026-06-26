@@ -1,4 +1,4 @@
-use crate::{errors::interpreter_error::InterpreterError, interpreter::{class::Class, function::Function, value::Value}, lexer::token::Token, parser::statement::Stmt};
+use crate::{errors::interpreter_error::InterpreterError, interpreter::{class::class::Class, function::Function, value::Value}, lexer::token::Token, parser::statement::Stmt};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 type Env = Rc<RefCell<Environment>>;

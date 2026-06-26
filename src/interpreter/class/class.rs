@@ -1,0 +1,19 @@
+use crate::interpreter::{Interpreter, class::instance::Instance, value::Value};
+
+#[derive(Debug, Clone)]
+pub struct Class {
+  name: String
+}
+
+impl Class {
+  pub fn new(name: String) -> Self {
+    Self {
+      name,
+    }
+  }
+
+  pub fn call(&self, interpreter: Interpreter, arguments: Vec<Value>) -> Instance {
+    let instance = Instance::new(self.clone());
+    instance
+  }
+}

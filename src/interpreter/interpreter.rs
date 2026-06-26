@@ -2,7 +2,7 @@ use std::{arch::global_asm, cell::RefCell, collections::HashMap, os::windows::ff
 
 use crate::{
     errors::interpreter_error::InterpreterError, interpreter::{
-        class::Class, environment::Environment, function::Function, signal::Signal, value::Value,
+        class::class::Class, environment::Environment, function::Function, signal::Signal, value::Value,
     }, lexer::token::{Token, TokenKind}, parser::{expression::Expr, statement::Stmt},
 };
 
