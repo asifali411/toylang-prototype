@@ -10,7 +10,7 @@ use crate::{
 type IResult<T> = Result<T, InterpreterError>;
 type Env = Rc<RefCell<Environment>>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Function {
     parameters: Vec<Token>,
     body: Vec<Box<Stmt>>,

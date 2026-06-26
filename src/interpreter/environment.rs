@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 type Env = Rc<RefCell<Environment>>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
     variables: HashMap<String, Value>,
     functions: HashMap<String, Function>,
@@ -96,7 +96,9 @@ impl Environment {
     //--------------------------------------------------------------------------
     
     pub fn define_func(&mut self, name: impl Into<String>, func: Function) {
-        self.functions.insert(name.into(), func);
+        let name = name.into();
+        self.functions.insert(name.clone(), func.clone());
+        self.variables.insert(name, Value::FUNC(func));
     }
 
     pub fn get_func(&self, name: &str) -> Option<Function> {
@@ -112,7 +114,19 @@ impl Environment {
     //--------------------------------------------------------------------------
 
     pub fn define_class(&mut self, name: impl Into<String>, class: Class) {
-        self.classes.insert(name.into(), class);
+        let name = name.into();
+        self.classes.insert(name.clone(), class.clone());
+        self.variables.insert(name, Value::CLASS(class));
+    }
+
+    pub fn get_class(&self, name: &str) -> Option<Class> {
+        if let Some(class) = self.classes.get(name) {
+            return Some(class.clone());
+        }
+
+        self.enclosing
+            .as_ref()
+            .and_then(|env: &Rc<RefCell<Environment>>| env.borrow().get_class(name))
     }
     
 }

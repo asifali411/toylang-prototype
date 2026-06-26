@@ -1,6 +1,6 @@
 use crate::interpreter::{Interpreter, class::instance::Instance, value::Value};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Class {
   name: String
 }

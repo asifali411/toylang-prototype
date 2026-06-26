@@ -1,6 +1,9 @@
 use std::cmp::Ordering;
 use std::ops::{Add, Div, Mul, Neg, Sub, Not};
 
+use crate::interpreter::class::class::Class;
+use crate::interpreter::function::Function;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     INT(i64),
@@ -9,6 +12,9 @@ pub enum Value {
 
     TRUE,
     FALSE,
+
+    FUNC(Function),
+    CLASS(Class),
 
     NULL,
 }

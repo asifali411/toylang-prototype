@@ -224,13 +224,27 @@ impl Interpreter {
     //-----------------------------------------------------------------------------
 
     fn lookup_var(&self, name: &str, expr: &Expr, line: usize, col: usize) -> IResult<Value> {
-        if let Some(&depth) = self.locals.get(&(expr as *const Expr)) {
-            self.environment.borrow().get_at(depth, name)
-                .ok_or(InterpreterError::UndefinedVariable { var: name.into(), line, col })
+        let depth = self.locals.get(&(expr as *const Expr)).copied();
+    
+        let var_result = if let Some(d) = depth {
+            self.environment.borrow().get_at(d, name)
         } else {
             self.globals.borrow().get_var(name, line, col)
-                .ok_or(InterpreterError::UndefinedVariable { var: name.into(), line, col })
+        };
+    
+        if let Some(v) = var_result {
+            return Ok(v);
         }
+    
+        if let Some(func) = self.environment.borrow().get_func(name) {
+            return Ok(Value::FUNC(func));
+        }
+    
+        if let Some(class) = self.environment.borrow().get_class(name) {
+            return Ok(Value::CLASS(class));
+        }
+    
+        Err(InterpreterError::UndefinedVariable { var: name.into(), line, col })
     }
 
     fn eval_unary(&mut self, op: &Token, expr: &Expr) -> IResult<Value> {
