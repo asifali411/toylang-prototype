@@ -70,6 +70,9 @@ impl Resolver {
       Stmt::Class { name, methods } => {
         self.declare(name);
         self.define(name);
+        for method in methods {
+          self.resolve_stmt(method);
+        }
       }
 
       Stmt::Return(expr) => self.resolve_expr(expr),
@@ -78,6 +81,11 @@ impl Resolver {
         self.resolve_expr(condition);
         self.resolve_stmt(if_body);
         if let Some(e) = else_body { self.resolve_stmt(e); }
+      }
+
+      Stmt::Loop { count, body } => {
+        self.resolve_expr(count);
+        self.resolve_stmt(body);
       }
 
       Stmt::LoopIf { condition, body } => {
@@ -115,7 +123,7 @@ impl Resolver {
         Expr::Unary { right, .. } | Expr::Group { expr: right } => {
             self.resolve_expr(right);
         }
-        Expr::Call { callee, arguments } => {
+        Expr::Call { callee, arguments, .. } => {
             self.resolve_expr(callee);
             for a in arguments { self.resolve_expr(a); }
         }

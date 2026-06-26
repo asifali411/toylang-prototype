@@ -1,7 +1,7 @@
 use std::{arch::global_asm, cell::RefCell, collections::HashMap, os::windows::ffi::EncodeWide, rc::Rc};
 
 use crate::{
-    errors::interpreter_error::InterpreterError, interpreter::{
+    errors::interpreter_error::InterpreterError::{self, UnexpectedExpr}, interpreter::{
         class::class::Class, environment::Environment, function::Function, signal::Signal, value::Value,
     }, lexer::token::{Token, TokenKind}, parser::{expression::Expr, statement::Stmt},
 };
@@ -101,7 +101,7 @@ impl Interpreter {
                     .assign_var(name, value.clone(), *line, *col)?;
                 Ok(value)
             }
-            Expr::Call { callee, arguments } => self.eval_call(callee, arguments),
+            Expr::Call { callee, arguments, line, col } => self.eval_call(callee, arguments, line, col),
             _ => Err(InterpreterError::UnexpectedExpr),
         }
     }
@@ -280,7 +280,7 @@ impl Interpreter {
         }
     }
 
-    fn eval_call(&mut self, callee: &Expr, arguments: &Vec<Box<Expr>>) -> IResult<Value> {
+    fn eval_call(&mut self, callee: &Expr, arguments: &Vec<Box<Expr>>, line: &usize, col: &usize) -> IResult<Value> {
         let name = match callee {
             Expr::Var(token) => {
                 if let TokenKind::IDENT(n) = &token.kind {
@@ -293,20 +293,53 @@ impl Interpreter {
         };
 
         let func = self
-            .environment
-            .borrow()
-            .get_func(&name)
-            .ok_or_else(|| InterpreterError::UndefinedVariable {
-                var: name.clone(),
-                line: 0,
-                col: 0,
-            })?;
+        .environment
+        .borrow()
+        .get_func(&name);
 
-        let args: Vec<Value> = arguments
-            .iter()
-            .map(|a| self.eval_expression(a))
-            .collect::<IResult<_>>()?;
+        let class = self
+        .environment
+        .borrow()
+        .get_class(&name);
 
-        func.call(self, args)
+        let callee = if let Some(func) = self
+        .environment
+        .borrow()
+        .get_func(&name) {
+            Some(Value::FUNC(func))
+        } else if let Some(class) = self
+        .environment
+        .borrow()
+        .get_class(&name){
+            Some(Value::CLASS(class))
+        } else {
+            None
+        };
+
+        if let Some(callee) = callee {
+            let args: Vec<Value> = arguments
+                .iter()
+                .map(|a| self.eval_expression(a))
+                .collect::<IResult<_>>()?;
+
+            match callee {
+                Value::FUNC(func) => {
+                    func.call(self, args)?;
+                },
+                Value::CLASS(class) => {
+                    class.call(self, args);
+                },
+                _ => return Err(InterpreterError::UnexpectedExpr),
+            };
+
+            Ok(Value::NULL)
+        } else {
+            return Err(InterpreterError::UndefinedFunction {
+                func: name, 
+                line: *line, 
+                col: *col 
+            });
+        }
+
     }
 }

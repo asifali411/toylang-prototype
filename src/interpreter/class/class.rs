@@ -12,7 +12,7 @@ impl Class {
     }
   }
 
-  pub fn call(&self, interpreter: Interpreter, arguments: Vec<Value>) -> Instance {
+  pub fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Instance {
     let instance = Instance::new(self.clone());
     instance
   }

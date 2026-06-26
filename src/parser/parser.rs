@@ -240,7 +240,7 @@ impl Parser {
         Ok(Stmt::Block(statements))
     }
 
-    fn finish_call(&mut self, callee: Expr) -> PResult<Expr> {
+    fn finish_call(&mut self, callee: Expr, line: usize, col: usize) -> PResult<Expr> {
         let mut arguments: Vec<Box<Expr>> = Vec::new();
 
         if !self.compare(TokenKind::CLOSE_PAREN) {
@@ -267,6 +267,8 @@ impl Parser {
         Ok(Expr::Call {
             callee: Box::new(callee),
             arguments,
+            line,
+            col,
         })
     }
 
@@ -407,8 +409,12 @@ impl Parser {
         let mut expr = self.primary()?;
 
         while self.compare(TokenKind::OPEN_PAREN) {
-            self.advance();
-            expr = self.finish_call(expr)?;
+            if let Some(tok) = self.advance() {
+                let tok = tok.clone();
+                expr = self.finish_call(expr, tok.span.line, tok.span.column)?;
+            } else {
+                return Err(ParseError::UnexpectedEof);
+            }
         }
 
         Ok(expr)

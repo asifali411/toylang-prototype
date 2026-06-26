@@ -23,6 +23,13 @@ pub enum InterpreterError {
         col: usize,
     },
 
+    #[error("Undefined func '{func}' at {line}:{col}")]
+    UndefinedFunction {
+        func: String,
+        line: usize,
+        col: usize,
+    },
+
     #[error("Expected {expected} arguments but recieved {got} arguments")]
     ArityMismatch {
         expected: usize,
@@ -58,6 +65,13 @@ impl InterpreterError {
                     .on_green();
 
                 eprintln!("{}: Undefined variable '{}'\n{}\n", prefix, var, loc);
+            }
+            InterpreterError::UndefinedFunction { func, line, col } => {
+                let loc = format!(" at line: {}, col: {} ", line, col)
+                    .black()
+                    .on_green();
+
+                eprintln!("{}: Undefined function '{}'\n{}\n", prefix, func, loc);
             }
             InterpreterError::ArityMismatch { expected, got } => {
                 eprintln!("Expected {expected} arguments but recieved {got} arguments");

@@ -25,5 +25,7 @@ pub enum Expr {
     Call {
         callee: Box<Expr>,
         arguments: Vec<Box<Expr>>,
+        line: usize,
+        col: usize,
     }
 }
