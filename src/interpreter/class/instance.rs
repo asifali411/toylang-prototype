@@ -18,9 +18,13 @@ impl Instance {
     }
   }
 
-  pub fn get(&self, name: String, line: usize, col: usize) -> IResult<&Value> {
+  pub fn get(&self, name: String, line: usize, col: usize) -> IResult<Value> {
     if let Some(value) = self.fields.get(&name) {
-      return Ok(value);
+      return Ok(value.clone());
+    }
+
+    if let Some(method) = self.class.find_method(&name) {
+      return Ok(Value::FUNC(method));
     }
 
     Err(InterpreterError::UndefinedProperty { prop: name, line, col })

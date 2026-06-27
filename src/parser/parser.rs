@@ -414,8 +414,8 @@ impl Parser {
 
     fn call(&mut self) -> PResult<Expr> {
         let mut expr = self.primary()?;
-
-        loop { 
+    
+        loop {
             if self.compare(TokenKind::OPEN_PAREN) {
                 if let Some(tok) = self.advance() {
                     let tok = tok.clone();
@@ -426,18 +426,23 @@ impl Parser {
             } else if self.compare(TokenKind::DOT) {
                 self.advance();
                 let tok = self.consume_ident("Expect property name after '.'")?;
-
-                match tok.kind {
-                    TokenKind::IDENT(name) => {
-                        return Ok(Expr::Get { object: Box::new(expr), name, line: tok.span.line, col: tok.span.column })
-                    },
-                    _ => {},
-                };
+    
+                if let TokenKind::IDENT(name) = tok.kind {
+                    let line = tok.span.line;
+                    let col = tok.span.column;
+    
+                    expr = Expr::Get {
+                        object: Box::new(expr),
+                        name,
+                        line,
+                        col,
+                    };
+                }
             } else {
                 break;
             }
         }
-
+    
         Ok(expr)
     }
 

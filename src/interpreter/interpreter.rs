@@ -133,7 +133,18 @@ impl Interpreter {
     }
 
     pub fn eval_class_statement(&mut self, name: &str, methods: &Vec<Stmt>) -> IResult<Value> {
-        let class = Class::new(name.to_string());
+        let mut functions: HashMap<String, Function> = HashMap::new();
+        for method in methods {
+            match method {
+                Stmt::Func { name, parameters, body } => {
+                    let func = Function::new(parameters.clone(), body.clone(), &self.environment);
+                    functions.insert(name.to_string(), func);
+                },
+                _ => {},
+            }
+        }
+        
+        let class = Class::new(name.to_string(), functions);
         self.environment.borrow_mut().define_class(name, class);
 
         Ok(Value::NULL)
@@ -283,73 +294,31 @@ impl Interpreter {
     }
 
     fn eval_call(&mut self, callee: &Expr, arguments: &Vec<Box<Expr>>, line: &usize, col: &usize) -> IResult<Value> {
-        let name = match callee {
-            Expr::Var(token) => {
-                if let TokenKind::IDENT(n) = &token.kind {
-                    n.clone()
-                } else {
-                    return Err(InterpreterError::UnexpectedExpr);
-                }
-            }
-            _ => return Err(InterpreterError::UnexpectedExpr),
-        };
-
-        let func = self
-        .environment
-        .borrow()
-        .get_func(&name);
-
-        let class = self
-        .environment
-        .borrow()
-        .get_class(&name);
-
-        let callee = if let Some(func) = self
-        .environment
-        .borrow()
-        .get_func(&name) {
-            Some(Value::FUNC(func))
-        } else if let Some(class) = self
-        .environment
-        .borrow()
-        .get_class(&name){
-            Some(Value::CLASS(class))
-        } else {
-            None
-        };
-
-        if let Some(callee) = callee {
-            let args: Vec<Value> = arguments
-                .iter()
-                .map(|a| self.eval_expression(a))
-                .collect::<IResult<_>>()?;
-
-            match callee {
-                Value::FUNC(func) => {
-                   return Ok(func.call(self, args)?);
-                },
-                Value::CLASS(class) => {
-                    return Ok(class.call(self, args));
-                },
-                _ => return Err(InterpreterError::UnexpectedExpr),
-            }
-        } else {
-            return Err(InterpreterError::UndefinedFunction {
-                func: name, 
-                line: *line, 
-                col: *col 
-            });
-        }
-
-    }
+        let callee_value = self.eval_expression(callee)?;
     
+        let args: Vec<Value> = arguments
+            .iter()
+            .map(|a| self.eval_expression(a))
+            .collect::<IResult<_>>()?;
+    
+        match callee_value {
+            Value::FUNC(func) => Ok(func.call(self, args)?),
+            Value::CLASS(class) => Ok(class.call(self, args)),
+            _ => Err(InterpreterError::UndefinedFunction {
+                func: format!("{:?}", callee),
+                line: *line,
+                col: *col,
+            }),
+        }
+    }
+
     fn eval_get(&mut self, object: &Expr, name: &String, line: &usize, col: &usize) -> IResult<Value> {
         let value = self.eval_expression(object)?;
         match value {
-            OBJECT(obj) => {
-                Ok(obj.get(name.to_string(), *line, *col)?.clone())
-            },
-            _ => Err(InterpreterError::InvalidStatement { message: "Only objects have properties".to_string() }),
+            Value::OBJECT(obj) => Ok(obj.get(name.to_string(), *line, *col)?.clone()),
+            _ => Err(InterpreterError::InvalidStatement {
+                message: "Only objects have properties".to_string(),
+            }),
         }
     }
 
