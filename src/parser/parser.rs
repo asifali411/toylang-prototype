@@ -449,8 +449,7 @@ impl Parser {
     fn primary(&mut self) -> PResult<Expr> {
         match self.advance() {
             Some(tok) => match &tok.kind {
-                TokenKind::INT(_)
-                | TokenKind::FLOAT(_)
+                TokenKind::NUM(_)
                 | TokenKind::TRUE
                 | TokenKind::FALSE
                 | TokenKind::STRING(_) => Ok(Expr::Literal(tok.clone())),

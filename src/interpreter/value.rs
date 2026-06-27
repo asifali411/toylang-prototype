@@ -13,8 +13,7 @@ pub type NativeFn = fn(&mut Interpreter, Vec<Value>) -> Result<Value, Interprete
 
 #[derive(Debug, Clone)]
 pub enum Value {
-    INT(i64),
-    FLOAT(f32),
+    NUM(f64),
     STRING(String),
 
     TRUE,
@@ -35,8 +34,7 @@ pub enum Value {
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Value::INT(a), Value::INT(b)) => a == b,
-            (Value::FLOAT(a), Value::FLOAT(b)) => a == b,
+            (Value::NUM(a), Value::NUM(b)) => a == b,
             (Value::STRING(a), Value::STRING(b)) => a == b,
             (Value::TRUE, Value::TRUE) => true,
             (Value::FALSE, Value::FALSE) => true,
@@ -51,10 +49,9 @@ impl PartialEq for Value {
 }
 
 impl Value {
-    pub fn as_f32(&self) -> f32 {
+    pub fn as_f64(&self) -> f64 {
         match self {
-            Value::INT(n) => *n as f32,
-            Value::FLOAT(n) => *n,
+            Value::NUM(n) => *n as f64,
             _ => panic!("Unexpected behaviour"),
         }
     }
@@ -112,15 +109,11 @@ impl Value {
     }
 }
 
-impl Add for Value {
+impl Mul for Value {
     type Output = Value;
 
-    fn add(self, rhs: Value) -> Self::Output {
-        match (self, rhs) {
-            (Value::INT(a), Value::INT(b)) => Value::INT(a + b),
-            (Value::STRING(a), Value::STRING(b)) => Value::STRING(format!("{}{}", a, b)),
-            (a, b) => Value::FLOAT(a.as_f32() + b.as_f32()),
-        }
+    fn mul(self, rhs: Value) -> Self::Output {
+        Value::NUM(self.as_f64() * rhs.as_f64())
     }
 }
 
@@ -128,21 +121,15 @@ impl Sub for Value {
     type Output = Value;
 
     fn sub(self, rhs: Value) -> Self::Output {
-        match (self, rhs) {
-            (Value::INT(a), Value::INT(b)) => Value::INT(a - b),
-            (a, b) => Value::FLOAT(a.as_f32() - b.as_f32()),
-        }
+        Value::NUM(self.as_f64() - rhs.as_f64())
     }
 }
 
-impl Mul for Value {
+impl Add for Value {
     type Output = Value;
 
-    fn mul(self, rhs: Value) -> Self::Output {
-        match (self, rhs) {
-            (Value::INT(a), Value::INT(b)) => Value::INT(a * b),
-            (a, b) => Value::FLOAT(a.as_f32() * b.as_f32()),
-        }
+    fn add(self, rhs: Value) -> Self::Output {
+        Value::NUM(self.as_f64() + rhs.as_f64())
     }
 }
 
@@ -150,7 +137,7 @@ impl Div for Value {
     type Output = Value;
 
     fn div(self, rhs: Value) -> Self::Output {
-        Value::FLOAT(self.as_f32() / rhs.as_f32())
+        Value::NUM(self.as_f64() / rhs.as_f64())
     }
 }
 
@@ -159,12 +146,12 @@ impl Neg for Value {
 
     fn neg(self) -> Self::Output {
         match self {
-            Value::INT(n) => Value::INT(-n),
-            Value::FLOAT(n) => Value::FLOAT(-n),
+            Value::NUM(n) => Value::NUM(-n),
             _ => panic!("Unexpected behaviour"),
         }
     }
 }
+
 impl Not for Value {
     type Output = Value;
 
@@ -176,15 +163,11 @@ impl Not for Value {
         }
     }
 }
+
 impl PartialOrd for Value {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
-            (Value::INT(a), Value::INT(b)) => a.partial_cmp(b),
-            (Value::FLOAT(a), Value::FLOAT(b)) => a.partial_cmp(b),
-
-            (Value::INT(a), Value::FLOAT(b)) => (*a as f32).partial_cmp(b),
-            (Value::FLOAT(a), Value::INT(b)) => a.partial_cmp(&(*b as f32)),
-
+            (Value::NUM(a), Value::NUM(b)) => a.partial_cmp(b),
             _ => None,
         }
     }

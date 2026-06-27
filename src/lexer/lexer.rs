@@ -105,9 +105,7 @@ impl Lexer {
         while self.peek().is_ascii_digit() {
             self.advance();
         }
-
-        let is_float = self.peek() == '.' && self.peek_next().is_ascii_digit();
-        if is_float {
+        if self.peek() == '.' && self.peek_next().is_ascii_digit() {
             self.advance();
             while self.peek().is_ascii_digit() {
                 self.advance();
@@ -115,16 +113,9 @@ impl Lexer {
         }
 
         let lexeme: String = self.source[self.start..self.current].iter().collect();
-
-        if is_float {
-            lexeme.parse::<f32>().map(|n| self.add_token(TokenKind::FLOAT(n))).map_err(|_| {
-                LexError::InvalidNumber { lexeme, line: self.line, col: self.column }
-            })
-        } else {
-            lexeme.parse::<i64>().map(|n| self.add_token(TokenKind::INT(n))).map_err(|_| {
-                LexError::InvalidNumber { lexeme, line: self.line, col: self.column }
-            })
-        }
+        lexeme.parse::<f64>().map(|n| self.add_token(TokenKind::NUM(n))).map_err(|_| {
+            LexError::InvalidNumber { lexeme, line: self.line, col: self.column }
+        })
     }
 
     fn scan_identifier(&mut self) {

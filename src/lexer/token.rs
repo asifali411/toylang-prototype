@@ -27,8 +27,7 @@ impl fmt::Display for Token {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
-    FLOAT(f32),
-    INT(i64),
+    NUM(f64),
     IDENT(String),
     STRING(String),
 

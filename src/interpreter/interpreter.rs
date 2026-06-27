@@ -69,8 +69,7 @@ impl Interpreter {
     pub fn eval_expression(&mut self, expr: &Expr) -> IResult<Value> {
         match expr {
             Expr::Literal(literal) => match &literal.kind {
-                TokenKind::INT(n) => Ok(Value::INT(*n)),
-                TokenKind::FLOAT(n) => Ok(Value::FLOAT(*n)),
+                TokenKind::NUM(n) => Ok(Value::NUM(*n)),
                 TokenKind::TRUE => Ok(Value::TRUE),
                 TokenKind::FALSE => Ok(Value::FALSE),
                 TokenKind::STRING(s) => Ok(Value::STRING(s.to_string())),
@@ -156,8 +155,7 @@ impl Interpreter {
     fn execute_print_statement(&mut self, expr: &Expr) -> IResult<Value> {
         let val = self.eval_expression(expr)?;
         match &val {
-            Value::INT(n) => println!("{}", n),
-            Value::FLOAT(n) => println!("{}", n),
+            Value::NUM(n) => println!("{}", n),
             Value::NULL => println!("null"),
             Value::TRUE => println!("true"),
             Value::FALSE => println!("false"),
@@ -212,7 +210,10 @@ impl Interpreter {
         body: &Box<Stmt>,
     ) -> Result<Value, Signal> {
         let count = match self.eval_expression(count).map_err(Signal::Error)? {
-            Value::INT(c) => c,
+            Value::NUM(c) =>  {
+                //TODO: handle negative and floating point numbers
+                c as usize
+            },
             _ => return Err(Signal::Error(InterpreterError::UnexpectedExpr)),
         };
 
@@ -277,7 +278,7 @@ impl Interpreter {
 
         match op.kind {
             TokenKind::SLASH => {
-                if matches!(right, Value::INT(0)) {
+                if matches!(right, Value::NUM(0.0)) {
                     return Err(InterpreterError::DivisionByZero);
                 }
                 Ok(left / right)

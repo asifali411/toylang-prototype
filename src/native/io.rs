@@ -7,8 +7,7 @@ type IResult<T> = Result<T, InterpreterError>;
 pub fn output(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
   for val in args {
     match val {
-      Value::INT(n) => print!("{}", n),
-      Value::FLOAT(n) => print!("{}", n),
+      Value::NUM(n) => print!("{}", n),
 
       Value::NULL => print!("null"),
 
