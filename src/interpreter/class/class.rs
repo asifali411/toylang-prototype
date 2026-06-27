@@ -19,13 +19,17 @@ impl Class {
     }
   }
 
-  pub fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value {
+  pub fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> IResult<Value> {
     let instance = Rc::new(RefCell::new(Instance::new(self.clone())));
     if let Some(init) = self.find_method(&self.name) {
       let func = instance.borrow().bind(init, Rc::clone(&instance));
-      func.call(interpreter, arguments);
+      if let ret = func.call(interpreter, arguments)? {
+        if ret != Value::NULL {
+          return Err(InterpreterError::InvalidStatement { message: "Cannot return value from an initializer".to_string() })
+        }
+      }
     }
-    Value::OBJECT(instance)
+    Ok(Value::OBJECT(instance))
   }
 
   pub fn arity(&self) -> usize {

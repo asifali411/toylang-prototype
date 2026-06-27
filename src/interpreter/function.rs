@@ -60,14 +60,14 @@ impl Function {
                         kind: format!("{:?}", param.kind.clone()),
                     })
                 }
-            }
+            };
         }
 
-        interpreter
-            .execute_block(&self.body, env)
-            .or_else(|signal| match signal {
-                Signal::Return(value) => Ok(value),
-                Signal::Error(e) => Err(e),
-            })
+        match interpreter.execute_block(&self.body, env) {
+            Ok(_) => Ok(Value::NULL),
+            Err(Signal::Return(_)) if self.is_init => Ok(Value::NULL),
+            Err(Signal::Return(value)) => Ok(value),
+            Err(Signal::Error(e)) => Err(e),
+        }
     }
 }

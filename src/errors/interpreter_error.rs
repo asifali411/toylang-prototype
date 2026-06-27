@@ -100,7 +100,7 @@ impl InterpreterError {
                 eprintln!("Invalid parameter: '{:?}'", kind.yellow());
             }
             InterpreterError::InvalidStatement { message } => {
-                eprintln!("Invalid statement {message}");
+                eprintln!("Invalid statement: {message}");
             }
         }
     }

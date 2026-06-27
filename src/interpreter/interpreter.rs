@@ -306,7 +306,7 @@ impl Interpreter {
     
         match callee_value {
             Value::FUNC(func) => Ok(func.call(self, args)?),
-            Value::CLASS(class) => Ok(class.call(self, args)),
+            Value::CLASS(class) => Ok(class.call(self, args)?),
             _ => Err(InterpreterError::UndefinedFunction {
                 func: format!("{:?}", callee),
                 line: *line,
