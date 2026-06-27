@@ -50,7 +50,10 @@ pub enum InterpreterError {
     InvalidParameter { kind: String },
 
     #[error("Invalid statement {message}")]
-    InvalidStatement { message: String }
+    InvalidStatement { message: String },
+
+    #[error("Arithmetic Error {message}")]
+    ArithmeticError { message: String },
 }
 
 impl InterpreterError {
@@ -101,6 +104,9 @@ impl InterpreterError {
             }
             InterpreterError::InvalidStatement { message } => {
                 eprintln!("Invalid statement: {message}");
+            },
+            InterpreterError::ArithmeticError { message } => {
+                eprintln!("{prefix}: Arithmetic Error: {message}");
             }
         }
     }

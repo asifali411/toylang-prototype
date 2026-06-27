@@ -49,3 +49,17 @@ pub fn to_string(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> 
 
   Ok(Value::STRING(val))
 }
+
+pub fn extract_type(val: &Value) -> String {
+  match val {
+    Value::NUM(_) => String::from("number"),
+    Value::STRING(_) => String::from("string"),
+    Value::NULL => String::from("null"),
+    Value::TRUE => String::from("boolean"),
+    Value::FALSE => String::from("boolean"),
+    Value::OBJECT(_) => String::from("object"),
+    Value::FUNC(_) => String::from("function"),
+    Value::CLASS(_) => String::from("class"),
+    Value::NativeFunction { .. } => String::from("function"),
+  }
+}

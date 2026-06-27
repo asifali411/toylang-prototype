@@ -266,8 +266,8 @@ impl Interpreter {
     fn eval_unary(&mut self, op: &Token, expr: &Expr) -> IResult<Value> {
         let value = self.eval_expression(expr)?;
         match op.kind {
-            TokenKind::MINUS => Ok(-value),
-            TokenKind::NOT => Ok(!value),
+            TokenKind::MINUS => Ok((-value)?),
+            TokenKind::NOT => Ok((!value)?),
             ref kind => Err(InterpreterError::UnsupportedUnaryOp { op: kind.clone() }),
         }
     }
@@ -276,24 +276,27 @@ impl Interpreter {
         let left = self.eval_expression(left)?;
         let right = self.eval_expression(right)?;
 
-        match op.kind {
+        let res = match op.kind {
             TokenKind::SLASH => {
                 if matches!(right, Value::NUM(0.0)) {
                     return Err(InterpreterError::DivisionByZero);
                 }
-                Ok(left / right)
+                left / right
             }
-            TokenKind::PLUS => Ok(left + right),
-            TokenKind::MINUS => Ok(left - right),
-            TokenKind::STAR => Ok(left * right),
+            TokenKind::PLUS => left + right,
+            TokenKind::MINUS => left - right,
+            TokenKind::STAR => left * right,
             TokenKind::LESS => Ok(left.lt(&right)),
             TokenKind::LESS_EQ => Ok(left.lt_eq(&right)),
             TokenKind::GREAT => Ok(left.gt(&right)),
             TokenKind::GREAT_EQ => Ok(left.gt_eq(&right)),
             TokenKind::EQ_EQ => Ok(left.eq(&right)),
             TokenKind::NOT_EQ => Ok(left.not_eq(&right)),
-            ref kind => Err(InterpreterError::UnsupportedBinaryOp { op: kind.clone() }),
-        }
+            ref kind => return Err(InterpreterError::UnsupportedBinaryOp { op: kind.clone() }),
+        };
+
+        Ok(res?)
+
     }
 
     fn eval_call(&mut self, callee: &Expr, arguments: &Vec<Box<Expr>>, line: &usize, col: &usize) -> IResult<Value> {

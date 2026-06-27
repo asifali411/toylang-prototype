@@ -8,8 +8,10 @@ use crate::interpreter::Interpreter;
 use crate::interpreter::class::class::Class;
 use crate::interpreter::class::instance::Instance;
 use crate::interpreter::function::Function;
+use crate::native::types::{convert_to_string, extract_type};
 
 pub type NativeFn = fn(&mut Interpreter, Vec<Value>) -> Result<Value, InterpreterError>;
+type IResult<T> = Result<T, InterpreterError>;
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -49,13 +51,6 @@ impl PartialEq for Value {
 }
 
 impl Value {
-    pub fn as_f64(&self) -> f64 {
-        match self {
-            Value::NUM(n) => *n as f64,
-            _ => panic!("Unexpected behaviour"),
-        }
-    }
-
     pub fn lt(&self, value: &Value) -> Value {
         if self < value {
             Value::TRUE
@@ -109,58 +104,121 @@ impl Value {
     }
 }
 
-impl Mul for Value {
-    type Output = Value;
+impl Add for Value {
+    type Output = IResult<Value>;
 
-    fn mul(self, rhs: Value) -> Self::Output {
-        Value::NUM(self.as_f64() * rhs.as_f64())
+    fn add(self, rhs: Value) -> IResult<Value> {
+        let res = match (self, rhs) {
+            (Value::NUM(a), Value::NUM(b)) => Value::NUM(a + b),
+            (Value::STRING(a), Value::STRING(b)) => Value::STRING(format!("{}{}", a, b)),
+            (a, b) => {
+                let a_type = extract_type(&a);
+                let b_type = extract_type(&b);
+                let a = convert_to_string(&a);
+                let b = convert_to_string(&b);
+
+                let message = format!("Cannot add <{}>({}) and <{}>({}) together", a_type, a, b_type, b);
+                return Err(InterpreterError::ArithmeticError { message })
+            }
+        };
+        Ok(res)
     }
 }
 
 impl Sub for Value {
-    type Output = Value;
+    type Output = IResult<Value>;
 
-    fn sub(self, rhs: Value) -> Self::Output {
-        Value::NUM(self.as_f64() - rhs.as_f64())
+    fn sub(self, rhs: Value) -> IResult<Value> {
+        let res = match (self, rhs) {
+            (Value::NUM(a), Value::NUM(b)) => Value::NUM(a - b),
+            (a, b) => {
+                let a_type = extract_type(&a);
+                let b_type = extract_type(&b);
+                let a = convert_to_string(&a);
+                let b = convert_to_string(&b);
+
+                let message = format!("Cannot substract <{}>({}) and <{}>({}) together", a_type, a, b_type, b);
+                return Err(InterpreterError::ArithmeticError { message })
+            }
+        };
+        Ok(res)
     }
 }
 
-impl Add for Value {
-    type Output = Value;
+impl Mul for Value {
+    type Output = IResult<Value>;
 
-    fn add(self, rhs: Value) -> Self::Output {
-        Value::NUM(self.as_f64() + rhs.as_f64())
+    fn mul(self, rhs: Value) -> IResult<Value> {
+        let res = match (self, rhs) {
+            (Value::NUM(a), Value::NUM(b)) => Value::NUM(a * b),
+            (a, b) => {
+                let a_type = extract_type(&a);
+                let b_type = extract_type(&b);
+                let a = convert_to_string(&a);
+                let b = convert_to_string(&b);
+
+                let message = format!("Cannot multiply <{}>({}) and <{}>({}) together", a_type, a, b_type, b);
+                return Err(InterpreterError::ArithmeticError { message })
+            }
+        };
+        Ok(res)
     }
 }
 
 impl Div for Value {
-    type Output = Value;
+    type Output = IResult<Value>;
 
-    fn div(self, rhs: Value) -> Self::Output {
-        Value::NUM(self.as_f64() / rhs.as_f64())
+    fn div(self, rhs: Value) -> IResult<Value> {
+        let res = match (self, rhs) {
+            (Value::NUM(a), Value::NUM(b)) => Value::NUM(a / b),
+            (a, b) => {
+                let a_type = extract_type(&a);
+                let b_type = extract_type(&b);
+                let a = convert_to_string(&a);
+                let b = convert_to_string(&b);
+
+                let message = format!("Cannot divide <{}>({}) and <{}>({}) together", a_type, a, b_type, b);
+                return Err(InterpreterError::ArithmeticError { message })
+            }
+        };
+        Ok(res)
     }
 }
 
 impl Neg for Value {
-    type Output = Value;
+    type Output = IResult<Value>;
 
     fn neg(self) -> Self::Output {
-        match self {
+        let res = match self {
             Value::NUM(n) => Value::NUM(-n),
-            _ => panic!("Unexpected behaviour"),
-        }
+            other => {
+                let other_type = extract_type(&other);
+                let other = convert_to_string(&other);
+
+                let message = format!("Cannot negate <{}>({})", other_type, other);
+                return Err(InterpreterError::ArithmeticError { message })
+            }
+        };
+        Ok(res)
     }
 }
 
 impl Not for Value {
-    type Output = Value;
+    type Output = IResult<Value>;
 
     fn not(self) -> Self::Output {
-        match self {
+        let res = match self {
             Value::TRUE => Value::FALSE,
             Value::FALSE => Value::TRUE,
-            _ => panic!("Unexpected behaviour"),
-        }
+            other => {
+                let other_type = extract_type(&other);
+                let other = convert_to_string(&other);
+
+                let message = format!("Cannot negate <{}>({})", other_type, other);
+                return Err(InterpreterError::ArithmeticError { message })
+            }
+        };
+        Ok(res)
     }
 }
 
