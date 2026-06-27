@@ -21,7 +21,20 @@ impl Class {
 
   pub fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value {
     let instance = Instance::new(self.clone());
+    if let Some(init) = self.find_method(&self.name) {
+      let func = instance.bind(init);
+      func.call(interpreter, arguments);
+    }
+
     Value::OBJECT(Rc::new(RefCell::new(instance)))
+  }
+
+  pub fn arity(&self) -> usize {
+    if let Some(init) = self.find_method(&self.name) {
+      init.arity()
+    } else {
+      0
+    }
   }
 
   pub fn name(&self) -> &str {

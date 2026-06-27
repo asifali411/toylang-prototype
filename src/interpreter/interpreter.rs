@@ -127,25 +127,25 @@ impl Interpreter {
         parameters: &Vec<Token>,
         body: &Box<Stmt>,
     ) -> IResult<Value> {
-        let func = Function::new(parameters.to_vec(), body.clone(), &self.environment);
+        let func = Function::new(parameters.to_vec(), body.clone(), &self.environment, false);
         self.environment.borrow_mut().define_func(name, func);
         Ok(Value::NULL)
     }
 
-    pub fn eval_class_statement(&mut self, name: &str, methods: &Vec<Stmt>) -> IResult<Value> {
+    pub fn eval_class_statement(&mut self, class_name: &str, methods: &Vec<Stmt>) -> IResult<Value> {
         let mut functions: HashMap<String, Function> = HashMap::new();
         for method in methods {
             match method {
                 Stmt::Func { name, parameters, body } => {
-                    let func = Function::new(parameters.clone(), body.clone(), &self.environment);
+                    let func = Function::new(parameters.clone(), body.clone(), &self.environment, name == class_name);
                     functions.insert(name.to_string(), func);
                 },
                 _ => {},
             }
         }
         
-        let class = Class::new(name.to_string(), functions);
-        self.environment.borrow_mut().define_class(name, class);
+        let class = Class::new(class_name.to_string(), functions);
+        self.environment.borrow_mut().define_class(class_name, class);
 
         Ok(Value::NULL)
     }

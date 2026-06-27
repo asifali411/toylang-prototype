@@ -15,10 +15,11 @@ pub struct Function {
     parameters: Vec<Token>,
     body: Vec<Box<Stmt>>,
     pub closure: Env,
+    is_init: bool,
 }
 
 impl Function {
-    pub fn new(parameters: Vec<Token>, body: Box<Stmt>, environment: &Env) -> Self {
+    pub fn new(parameters: Vec<Token>, body: Box<Stmt>, environment: &Env, is_init: bool) -> Self {
         let stmts = match *body {
             Stmt::Block(stmts) => stmts,
             other => panic!(
@@ -30,7 +31,12 @@ impl Function {
             parameters,
             body: stmts,
             closure: environment.clone(),
+            is_init,
         }
+    }
+
+    pub fn arity(&self) -> usize {
+        self.parameters.len()
     }
 
     pub fn call(

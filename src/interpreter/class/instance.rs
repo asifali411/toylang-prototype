@@ -29,7 +29,7 @@ impl Instance {
     Err(InterpreterError::UndefinedProperty { prop: name, line, col })
   }
 
-  fn bind(&self, mut method: Function) -> Function {
+  pub fn bind(&self, mut method: Function) -> Function {
     let env = Environment::new_enclosed(method.closure.clone());
     env.borrow_mut().define_var("this", Value::OBJECT(
         Rc::new(RefCell::new(self.clone()))
