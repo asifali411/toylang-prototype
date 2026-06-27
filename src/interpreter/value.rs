@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::ops::{Add, Div, Mul, Neg, Sub, Not};
+use std::rc::Rc;
 
 use crate::interpreter::class::class::Class;
 use crate::interpreter::class::instance::Instance;
@@ -16,7 +18,7 @@ pub enum Value {
 
     FUNC(Function),
     CLASS(Class),
-    OBJECT(Instance),
+    OBJECT(Rc<RefCell<Instance>>),
 
     NULL,
 }

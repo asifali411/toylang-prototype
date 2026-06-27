@@ -14,7 +14,7 @@ type Env = Rc<RefCell<Environment>>;
 pub struct Function {
     parameters: Vec<Token>,
     body: Vec<Box<Stmt>>,
-    closure: Env,
+    pub closure: Env,
 }
 
 impl Function {

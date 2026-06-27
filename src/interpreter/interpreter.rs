@@ -159,6 +159,7 @@ impl Interpreter {
             Value::TRUE => println!("true"),
             Value::FALSE => println!("false"),
             Value::STRING(v) => println!("{}", v),
+            Value::OBJECT(obj) => println!("<instance of {}>", obj.borrow().class_name()),
             other => println!("{:?}", other),
         }
         Ok(val)
@@ -237,26 +238,28 @@ impl Interpreter {
     //-----------------------------------------------------------------------------
 
     fn lookup_var(&self, name: &str, expr: &Expr, line: usize, col: usize) -> IResult<Value> {
-        let depth = self.locals.get(&(expr as *const Expr)).copied();
-    
-        let var_result = if let Some(d) = depth {
-            self.environment.borrow().get_at(d, name)
-        } else {
-            self.globals.borrow().get_var(name, line, col)
-        };
-    
-        if let Some(v) = var_result {
-            return Ok(v);
+        if let Some(value) = self.environment.borrow().get_var(name, line, col) {
+            return Ok(value);
         }
-    
+
+        if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
+            if let Some(value) = self.environment.borrow().get_at(depth, name) {
+                return Ok(value);
+            }
+        }
+
+        if let Some(value) = self.globals.borrow().get_var(name, line, col) {
+            return Ok(value);
+        }
+
         if let Some(func) = self.environment.borrow().get_func(name) {
             return Ok(Value::FUNC(func));
         }
-    
+
         if let Some(class) = self.environment.borrow().get_class(name) {
             return Ok(Value::CLASS(class));
         }
-    
+
         Err(InterpreterError::UndefinedVariable { var: name.into(), line, col })
     }
 
@@ -313,25 +316,24 @@ impl Interpreter {
     }
 
     fn eval_get(&mut self, object: &Expr, name: &String, line: &usize, col: &usize) -> IResult<Value> {
-        let value = self.eval_expression(object)?;
-        match value {
-            Value::OBJECT(obj) => Ok(obj.get(name.to_string(), *line, *col)?.clone()),
+        match self.eval_expression(object)? {
+            Value::OBJECT(obj) => obj.borrow().get(name.clone(), *line, *col),
             _ => Err(InterpreterError::InvalidStatement {
                 message: "Only objects have properties".to_string(),
             }),
         }
     }
-
+    
     fn eval_set(&mut self, object: &Expr, name: &String, value: &Expr) -> IResult<Value> {
-        let object = self.eval_expression(object)?;
-        
-        match object {
-            Value::OBJECT(mut obj) => {
-                let value = self.eval_expression(value)?;
-                &obj.set(name.to_string(), &value);
-                Ok(value)
-            },
-            _ => Err(InterpreterError::InvalidStatement { message: "Only objects have properties".to_string() }),
+        match self.eval_expression(object)? {
+            Value::OBJECT(obj) => {
+                let val = self.eval_expression(value)?;
+                obj.borrow_mut().set(name.clone(), &val);
+                Ok(val)
+            }
+            _ => Err(InterpreterError::InvalidStatement {
+                message: "Only objects have properties".to_string(),
+            }),
         }
     }
 }

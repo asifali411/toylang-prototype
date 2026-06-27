@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{errors::interpreter_error::InterpreterError, interpreter::{class::class::Class, value::Value}};
+use crate::{errors::interpreter_error::InterpreterError, interpreter::{class::class::Class, environment::Environment, function::Function, value::Value}};
 
 type IResult<T> = Result<T, InterpreterError>;
 
@@ -22,12 +22,24 @@ impl Instance {
     if let Some(value) = self.fields.get(&name) {
       return Ok(value.clone());
     }
-
     if let Some(method) = self.class.find_method(&name) {
-      return Ok(Value::FUNC(method));
+      let bound = self.bind(method);
+      return Ok(Value::FUNC(bound));
     }
-
     Err(InterpreterError::UndefinedProperty { prop: name, line, col })
+  }
+
+  fn bind(&self, mut method: Function) -> Function {
+    let env = Environment::new_enclosed(method.closure.clone());
+    env.borrow_mut().define_var("this", Value::OBJECT(
+        Rc::new(RefCell::new(self.clone()))
+    ));
+    method.closure = env;
+    method
+  }
+
+  pub fn class_name(&self) -> String {
+    self.class.name().to_string()
   }
 
   pub fn set(&mut self, name: String, value: &Value) {

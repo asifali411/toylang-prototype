@@ -70,9 +70,13 @@ impl Resolver {
       Stmt::Class { name, methods } => {
         self.declare(name);
         self.define(name);
+
+        self.begin_scope();
+        self.scopes.last_mut().unwrap().insert("this".to_string(), true);
         for method in methods {
           self.resolve_stmt(method);
         }
+        self.end_scope();
       }
 
       Stmt::Return(expr) => self.resolve_expr(expr),

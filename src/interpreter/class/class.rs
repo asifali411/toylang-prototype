@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::{Ref, RefCell}, collections::HashMap, rc::Rc};
 
 use crate::{errors::interpreter_error::InterpreterError, interpreter::{Interpreter, class::instance::Instance, environment::{self, Environment}, function::Function, signal::Signal, value::Value}};
 
@@ -21,7 +21,11 @@ impl Class {
 
   pub fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value {
     let instance = Instance::new(self.clone());
-    Value::OBJECT(instance)
+    Value::OBJECT(Rc::new(RefCell::new(instance)))
+  }
+
+  pub fn name(&self) -> &str {
+    &self.name
   }
 
   pub fn find_method(&self, name: &str) -> Option<Function> {
