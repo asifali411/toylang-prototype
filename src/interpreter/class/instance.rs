@@ -25,4 +25,8 @@ impl Instance {
 
     Err(InterpreterError::UndefinedProperty { prop: name, line, col })
   }
+
+  pub fn set(&mut self, name: String, value: &Value) {
+    self.fields.insert(name, value.clone());
+  }
 }

@@ -296,6 +296,13 @@ impl Parser {
                         col: tok.span.column,
                     });
                 }
+            } else if let Expr::Get { 
+                object, 
+                name, 
+                line, 
+                col } = expr {
+
+                return Ok(Expr::Set { object, name, value: Box::new(value) })
             }
 
             return Err(ParseError::InvalidStatement {

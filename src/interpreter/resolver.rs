@@ -130,6 +130,10 @@ impl Resolver {
         Expr::Get { object, .. } => {
           self.resolve_expr(object);
         }
+        Expr::Set { object, value , ..} => {
+          self.resolve_expr(object);
+          self.resolve_expr(value);
+        }
         _ => {}
     }
 }

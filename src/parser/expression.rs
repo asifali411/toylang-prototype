@@ -34,4 +34,9 @@ pub enum Expr {
         line: usize,
         col: usize,
     },
+    Set {
+        object: Box<Expr>,
+        name: String,
+        value: Box<Expr>,
+    }
 }

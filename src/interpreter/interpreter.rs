@@ -103,6 +103,7 @@ impl Interpreter {
             }
             Expr::Call { callee, arguments, line, col } => self.eval_call(callee, arguments, line, col),
             Expr::Get { object, name, line, col } => self.eval_get(object, name, line, col),
+            Expr::Set { object, name, value } => self.eval_set(object, name, value),
             _ => return Err(InterpreterError::UnexpectedExpr),
         }
     }
@@ -325,15 +326,13 @@ impl Interpreter {
 
             match callee {
                 Value::FUNC(func) => {
-                    func.call(self, args)?;
+                   return Ok(func.call(self, args)?);
                 },
                 Value::CLASS(class) => {
-                    class.call(self, args);
+                    return Ok(class.call(self, args));
                 },
                 _ => return Err(InterpreterError::UnexpectedExpr),
-            };
-
-            Ok(Value::NULL)
+            }
         } else {
             return Err(InterpreterError::UndefinedFunction {
                 func: name, 
@@ -346,9 +345,23 @@ impl Interpreter {
     
     fn eval_get(&mut self, object: &Expr, name: &String, line: &usize, col: &usize) -> IResult<Value> {
         let value = self.eval_expression(object)?;
-        println!("{:?}", value);
         match value {
-            OBJECT(obj) => Ok(obj.get(name.to_string(), *line, *col)?.clone()),
+            OBJECT(obj) => {
+                Ok(obj.get(name.to_string(), *line, *col)?.clone())
+            },
+            _ => Err(InterpreterError::InvalidStatement { message: "Only objects have properties".to_string() }),
+        }
+    }
+
+    fn eval_set(&mut self, object: &Expr, name: &String, value: &Expr) -> IResult<Value> {
+        let object = self.eval_expression(object)?;
+        
+        match object {
+            Value::OBJECT(mut obj) => {
+                let value = self.eval_expression(value)?;
+                &obj.set(name.to_string(), &value);
+                Ok(value)
+            },
             _ => Err(InterpreterError::InvalidStatement { message: "Only objects have properties".to_string() }),
         }
     }
