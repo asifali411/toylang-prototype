@@ -11,7 +11,7 @@ use lexer::Lexer;
 use parser::Parser;
 use errors::lang_error::LangError;
 
-use crate::{interpreter::{environment::Environment, resolver::Resolver, value::{NativeFn, Value}}, native::io::{output}};
+use crate::{interpreter::{environment::Environment, resolver::Resolver, value::{NativeFn, Value}}, native::io::{input, output}};
 type Env = Rc<RefCell<Environment>>;
 
 pub fn run(source: String) -> ExitCode {
@@ -51,6 +51,7 @@ fn define_natives(env: &Env) {
     let mut native_functions: HashMap<String, NativeFn> = HashMap::new();
 
     native_functions.insert(String::from("output"), output);
+    native_functions.insert(String::from("input"), input);
 
     for (name, func) in native_functions {
         env.borrow_mut().define_var(name.clone(), Value::NativeFunction {
