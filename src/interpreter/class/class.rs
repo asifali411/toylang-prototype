@@ -20,13 +20,12 @@ impl Class {
   }
 
   pub fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value {
-    let instance = Instance::new(self.clone());
+    let instance = Rc::new(RefCell::new(Instance::new(self.clone())));
     if let Some(init) = self.find_method(&self.name) {
-      let func = instance.bind(init);
+      let func = instance.borrow().bind(init, Rc::clone(&instance));
       func.call(interpreter, arguments);
     }
-
-    Value::OBJECT(Rc::new(RefCell::new(instance)))
+    Value::OBJECT(instance)
   }
 
   pub fn arity(&self) -> usize {

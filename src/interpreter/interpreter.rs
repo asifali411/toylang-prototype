@@ -317,10 +317,13 @@ impl Interpreter {
 
     fn eval_get(&mut self, object: &Expr, name: &String, line: &usize, col: &usize) -> IResult<Value> {
         match self.eval_expression(object)? {
-            Value::OBJECT(obj) => obj.borrow().get(name.clone(), *line, *col),
+            Value::OBJECT(obj) => {
+                let rc = Rc::clone(&obj);
+                obj.borrow().get(name.clone(), *line, *col, rc)
+            }
             _ => Err(InterpreterError::InvalidStatement {
                 message: "Only objects have properties".to_string(),
-            }),
+            })
         }
     }
     

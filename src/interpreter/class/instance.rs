@@ -18,22 +18,20 @@ impl Instance {
     }
   }
 
-  pub fn get(&self, name: String, line: usize, col: usize) -> IResult<Value> {
+  pub fn get(&self, name: String, line: usize, col: usize, this: Rc<RefCell<Instance>>) -> IResult<Value> {
     if let Some(value) = self.fields.get(&name) {
       return Ok(value.clone());
     }
     if let Some(method) = self.class.find_method(&name) {
-      let bound = self.bind(method);
+      let bound = self.bind(method, this);
       return Ok(Value::FUNC(bound));
     }
     Err(InterpreterError::UndefinedProperty { prop: name, line, col })
   }
 
-  pub fn bind(&self, mut method: Function) -> Function {
+  pub fn bind(&self, mut method: Function, this: Rc<RefCell<Instance>>) -> Function {
     let env = Environment::new_enclosed(method.closure.clone());
-    env.borrow_mut().define_var("this", Value::OBJECT(
-        Rc::new(RefCell::new(self.clone()))
-    ));
+    env.borrow_mut().define_var("this", Value::OBJECT(this));
     method.closure = env;
     method
   }
