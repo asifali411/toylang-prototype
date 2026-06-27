@@ -11,7 +11,7 @@ use crate::interpreter::function::Function;
 
 pub type NativeFn = fn(&mut Interpreter, Vec<Value>) -> Result<Value, InterpreterError>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum Value {
     INT(i64),
     FLOAT(f32),
@@ -30,6 +30,24 @@ pub enum Value {
     },
 
     NULL,
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Value::INT(a), Value::INT(b)) => a == b,
+            (Value::FLOAT(a), Value::FLOAT(b)) => a == b,
+            (Value::STRING(a), Value::STRING(b)) => a == b,
+            (Value::TRUE, Value::TRUE) => true,
+            (Value::FALSE, Value::FALSE) => true,
+            (Value::NULL, Value::NULL) => true,
+            (Value::NativeFunction { name: n1, .. }, Value::NativeFunction { name: n2, .. }) => n1 == n2,
+            (Value::FUNC(_), Value::FUNC(_)) => false,
+            (Value::CLASS(_), Value::CLASS(_)) => false,
+            (Value::OBJECT(a), Value::OBJECT(b)) => Rc::ptr_eq(a, b),
+            _ => false,
+        }
+    }
 }
 
 impl Value {
