@@ -130,7 +130,7 @@ impl Interpreter {
         parameters: &Vec<Token>,
         body: &Box<Stmt>,
     ) -> IResult<Value> {
-        let func = Function::new(parameters.to_vec(), body.clone(), &self.environment, false);
+        let func = Function::new(name.to_string(), parameters.to_vec(), body.clone(), &self.environment, false);
         self.environment.borrow_mut().define_func(name, func);
         Ok(Value::NULL)
     }
@@ -140,7 +140,7 @@ impl Interpreter {
         for method in methods {
             match method {
                 Stmt::Func { name, parameters, body } => {
-                    let func = Function::new(parameters.clone(), body.clone(), &self.environment, name == class_name);
+                    let func = Function::new(name.to_string(), parameters.clone(), body.clone(), &self.environment, name == class_name);
                     functions.insert(name.to_string(), func);
                 },
                 _ => {},
@@ -306,6 +306,9 @@ impl Interpreter {
         match callee_value {
             Value::FUNC(func) => Ok(func.call(self, args)?),
             Value::CLASS(class) => Ok(class.call(self, args)?),
+            Value::NativeFunction { func , ..} => {
+                func(self, args)
+            }
             _ => Err(InterpreterError::UndefinedFunction {
                 func: format!("{:?}", callee),
                 line: *line,

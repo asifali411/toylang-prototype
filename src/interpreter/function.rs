@@ -12,6 +12,7 @@ type Env = Rc<RefCell<Environment>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Function {
+    name: String,
     parameters: Vec<Token>,
     body: Vec<Box<Stmt>>,
     pub closure: Env,
@@ -19,7 +20,7 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn new(parameters: Vec<Token>, body: Box<Stmt>, environment: &Env, is_init: bool) -> Self {
+    pub fn new(name: String, parameters: Vec<Token>, body: Box<Stmt>, environment: &Env, is_init: bool) -> Self {
         let stmts = match *body {
             Stmt::Block(stmts) => stmts,
             other => panic!(
@@ -28,11 +29,16 @@ impl Function {
             ),
         };
         Self {
+            name,
             parameters,
             body: stmts,
             closure: environment.clone(),
             is_init,
         }
+    }
+
+    pub fn func_name(&self) -> &str {
+        &self.name
     }
 
     pub fn call(

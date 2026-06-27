@@ -3,9 +3,13 @@ use std::cmp::Ordering;
 use std::ops::{Add, Div, Mul, Neg, Sub, Not};
 use std::rc::Rc;
 
+use crate::errors::interpreter_error::InterpreterError;
+use crate::interpreter::Interpreter;
 use crate::interpreter::class::class::Class;
 use crate::interpreter::class::instance::Instance;
 use crate::interpreter::function::Function;
+
+pub type NativeFn = fn(&mut Interpreter, Vec<Value>) -> Result<Value, InterpreterError>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -19,6 +23,11 @@ pub enum Value {
     FUNC(Function),
     CLASS(Class),
     OBJECT(Rc<RefCell<Instance>>),
+
+    NativeFunction {
+        name: String,
+        func: NativeFn,
+    },
 
     NULL,
 }
