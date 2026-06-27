@@ -299,8 +299,8 @@ impl Parser {
             } else if let Expr::Get { 
                 object, 
                 name, 
-                line, 
-                col } = expr {
+                ..
+            } = expr {
 
                 return Ok(Expr::Set { object, name, value: Box::new(value) })
             }

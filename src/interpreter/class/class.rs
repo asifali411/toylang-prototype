@@ -1,9 +1,8 @@
-use std::{cell::{Ref, RefCell}, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{errors::interpreter_error::InterpreterError, interpreter::{Interpreter, class::instance::Instance, environment::{self, Environment}, function::Function, signal::Signal, value::Value}};
+use crate::{errors::interpreter_error::InterpreterError, interpreter::{Interpreter, class::instance::Instance, function::Function, value::Value}};
 
 type IResult<T> = Result<T, InterpreterError>;
-type Env = Rc<RefCell<Environment>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Class {
@@ -23,21 +22,13 @@ impl Class {
     let instance = Rc::new(RefCell::new(Instance::new(self.clone())));
     if let Some(init) = self.find_method(&self.name) {
       let func = instance.borrow().bind(init, Rc::clone(&instance));
-      if let ret = func.call(interpreter, arguments)? {
-        if ret != Value::NULL {
-          return Err(InterpreterError::InvalidStatement { message: "Cannot return value from an initializer".to_string() })
-        }
+      let ret = func.call(interpreter, arguments)?;
+
+      if ret != Value::NULL {
+        return Err(InterpreterError::InvalidStatement { message: "Cannot return value from an initializer".to_string() })
       }
     }
     Ok(Value::OBJECT(instance))
-  }
-
-  pub fn arity(&self) -> usize {
-    if let Some(init) = self.find_method(&self.name) {
-      init.arity()
-    } else {
-      0
-    }
   }
 
   pub fn name(&self) -> &str {

@@ -1,4 +1,4 @@
-use crate::{errors::interpreter_error::InterpreterError::InvalidParameter, lexer::token::TokenKind};
+use crate::lexer::token::TokenKind;
 use colored::Colorize;
 use thiserror::Error;
 

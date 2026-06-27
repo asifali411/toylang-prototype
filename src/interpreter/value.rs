@@ -91,6 +91,7 @@ impl Add for Value {
     fn add(self, rhs: Value) -> Self::Output {
         match (self, rhs) {
             (Value::INT(a), Value::INT(b)) => Value::INT(a + b),
+            (Value::STRING(a), Value::STRING(b)) => Value::STRING(format!("{}{}", a, b)),
             (a, b) => Value::FLOAT(a.as_f32() + b.as_f32()),
         }
     }

@@ -35,10 +35,6 @@ impl Function {
         }
     }
 
-    pub fn arity(&self) -> usize {
-        self.parameters.len()
-    }
-
     pub fn call(
         &self,
         interpreter: &mut crate::interpreter::Interpreter,

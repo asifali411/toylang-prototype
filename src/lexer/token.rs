@@ -1,3 +1,4 @@
+#![allow(warnings)]
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]

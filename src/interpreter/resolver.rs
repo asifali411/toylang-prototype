@@ -98,8 +98,6 @@ impl Resolver {
       }
 
       Stmt::Expr(e) | Stmt::Print(e) => self.resolve_expr(e),
-      
-      _ => {},
     }
   }
 

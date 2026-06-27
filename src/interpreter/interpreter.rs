@@ -1,14 +1,15 @@
-use std::{arch::global_asm, cell::RefCell, collections::HashMap, os::windows::ffi::EncodeWide, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    errors::interpreter_error::InterpreterError::{self, UnexpectedExpr}, interpreter::{
-        class::class::Class, environment::Environment, function::Function, signal::Signal, value::Value::{self, OBJECT},
-    }, lexer::token::{Token, TokenKind}, parser::{expression::Expr::{self, Get}, statement::Stmt},
+    errors::interpreter_error::InterpreterError, interpreter::{
+        class::class::Class, environment::Environment, function::Function, signal::Signal, value::Value,
+    }, lexer::token::{Token, TokenKind}, parser::{expression::Expr, statement::Stmt},
 };
 
 type IResult<T> = Result<T, InterpreterError>;
 type Env = Rc<RefCell<Environment>>;
 
+#[derive(Debug)]
 pub struct Interpreter {
     pub environment: Env,
     pub globals: Env,
@@ -23,10 +24,6 @@ impl Interpreter {
             globals,
             locals: HashMap::new(),
         }
-    }
-
-    pub fn resolve(&mut self, locals: HashMap<*const Expr, usize>) {
-        self.locals = locals;
     }
 
     pub fn execute(&mut self, statement: &Stmt) -> IResult<Value> {
@@ -96,15 +93,21 @@ impl Interpreter {
             Expr::Group { expr } => self.eval_expression(expr),
             Expr::Assign { name, value, line, col } => {
                 let value = self.eval_expression(value)?;
-                self.environment
-                    .borrow_mut()
-                    .assign_var(name, value.clone(), *line, *col)?;
+                if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
+                    self.environment
+                        .borrow_mut()
+                        .assign_at(depth, name, value.clone());
+                } else {
+                    self.environment
+                        .borrow_mut()
+                        .assign_var(name, value.clone(), *line, *col)?;
+                }
                 Ok(value)
             }
             Expr::Call { callee, arguments, line, col } => self.eval_call(callee, arguments, line, col),
             Expr::Get { object, name, line, col } => self.eval_get(object, name, line, col),
             Expr::Set { object, name, value } => self.eval_set(object, name, value),
-            _ => return Err(InterpreterError::UnexpectedExpr),
+            // _ => return Err(InterpreterError::UnexpectedExpr),
         }
     }
 
@@ -238,28 +241,24 @@ impl Interpreter {
     //-----------------------------------------------------------------------------
 
     fn lookup_var(&self, name: &str, expr: &Expr, line: usize, col: usize) -> IResult<Value> {
-        if let Some(value) = self.environment.borrow().get_var(name, line, col) {
-            return Ok(value);
-        }
-
         if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
             if let Some(value) = self.environment.borrow().get_at(depth, name) {
                 return Ok(value);
             }
         }
-
+    
         if let Some(value) = self.globals.borrow().get_var(name, line, col) {
             return Ok(value);
         }
-
+    
         if let Some(func) = self.environment.borrow().get_func(name) {
             return Ok(Value::FUNC(func));
         }
-
+    
         if let Some(class) = self.environment.borrow().get_class(name) {
             return Ok(Value::CLASS(class));
         }
-
+    
         Err(InterpreterError::UndefinedVariable { var: name.into(), line, col })
     }
 
