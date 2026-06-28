@@ -66,6 +66,8 @@ impl Lexer {
             ')' => self.add_token(TokenKind::CLOSE_PAREN),
             '{' => self.add_token(TokenKind::OPEN_BRACE),
             '}' => self.add_token(TokenKind::CLOSE_BRACE),
+            '[' => self.add_token(TokenKind::OPEN_BRACK),
+            ']' => self.add_token(TokenKind::CLOSE_BRACK),
 
             '"' | '\'' => self.scan_string(c)?,
 

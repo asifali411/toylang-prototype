@@ -33,9 +33,21 @@ pub fn convert_to_string(val: &Value) -> String {
     Value::OBJECT(obj) => format!("<instance of {}>", obj.borrow().class_name()),
     Value::FUNC(func) => format!("<function {}>", func.func_name()),
     Value::CLASS(cls) => format!("<class {}>", cls.name()),
+    Value::ARRAY(elements) => format_array(elements),
 
     Value::NativeFunction { name, ..} => format!("<native function {}>", name),
   }
+}
+
+fn format_array(array: &Vec<Box<Value>>) -> String {
+  let mut formatted = String::from("[");
+  for i in 0..(array.len() - 1) {
+    formatted.push_str(&convert_to_string(&array[i]));
+    formatted.push_str(", ");
+  }
+  formatted.push_str(&convert_to_string(&array[array.len() - 1]));
+  formatted.push(']');
+  formatted
 }
 
 pub fn to_string(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
@@ -71,6 +83,7 @@ pub fn extract_type(val: &Value) -> String {
     Value::OBJECT(_) => String::from("object"),
     Value::FUNC(_) => String::from("function"),
     Value::CLASS(_) => String::from("class"),
+    Value::ARRAY(_) => String::from("array"),
     Value::NativeFunction { .. } => String::from("function"),
   }
 }

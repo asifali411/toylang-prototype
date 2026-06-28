@@ -278,6 +278,26 @@ impl Parser {
         })
     }
 
+    fn create_array(&mut self) -> PResult<Expr> {
+        let mut elements = Vec::new();
+
+        if !self.compare(TokenKind::CLOSE_BRACK) {
+            loop {
+                elements.push(Box::new(self.expression()?));
+
+                if !self.compare(TokenKind::COMMA) {
+                    break;
+                }
+
+                self.advance();
+            }
+        }
+
+        self.consume(TokenKind::CLOSE_BRACK, "Expect ']' after array.")?;
+
+        return Ok(Expr::Array { elements });
+    }
+
     // ---------------------------------------------------------------
     // Expressions
     // ---------------------------------------------------------------
@@ -467,6 +487,7 @@ impl Parser {
                     })
                 }
                 TokenKind::IDENT(_) => Ok(Expr::Var(tok.clone())),
+                TokenKind::OPEN_BRACK => self.create_array(),
                 _ => Err(ParseError::UnexpectedToken {
                     token: tok.to_string(),
                     line: tok.span.line,

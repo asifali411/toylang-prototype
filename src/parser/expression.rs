@@ -38,5 +38,8 @@ pub enum Expr {
         object: Box<Expr>,
         name: String,
         value: Box<Expr>,
-    }
+    },
+    Array {
+        elements: Vec<Box<Expr>>,
+    },
 }

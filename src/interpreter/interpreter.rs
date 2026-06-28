@@ -104,6 +104,7 @@ impl Interpreter {
             Expr::Call { callee, arguments, line, col } => self.eval_call(callee, arguments, line, col),
             Expr::Get { object, name, line, col } => self.eval_get(object, name, line, col),
             Expr::Set { object, name, value } => self.eval_set(object, name, value),
+            Expr::Array { elements } => self.eval_array(elements),
         }
     }
 
@@ -364,5 +365,15 @@ impl Interpreter {
                 message: "Only objects have properties".to_string(),
             }),
         }
+    }
+
+    fn eval_array(&mut self, elements: &Vec<Box<Expr>>) -> IResult<Value> {
+        let mut items: Vec<Box<Value>> = Vec::new();
+        for elem in elements {
+            let item = self.eval_expression(elem)?;
+            items.push(Box::new(item));
+        }
+
+        Ok(Value::ARRAY(items))
     }
 }

@@ -24,6 +24,7 @@ pub enum Value {
     FUNC(Function),
     CLASS(Class),
     OBJECT(Rc<RefCell<Instance>>),
+    ARRAY(Vec<Box<Value>>),
 
     NativeFunction {
         name: String,
