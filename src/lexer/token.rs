@@ -67,5 +67,6 @@ pub enum TokenKind {
     DOT,
     COMMA,
     SEMI,
+    COLON,
     EOF,
 }

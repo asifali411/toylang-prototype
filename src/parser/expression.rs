@@ -42,4 +42,13 @@ pub enum Expr {
     Array {
         elements: Vec<Box<Expr>>,
     },
+    Hashmap {
+        fields: Vec<Box<Expr>>, // expect Expr::Field
+    },
+    Field {
+        key: String,
+        value: Box<Expr>,
+        line: usize,
+        col: usize,
+    }
 }

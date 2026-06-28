@@ -105,6 +105,8 @@ impl Interpreter {
             Expr::Get { object, name, line, col } => self.eval_get(object, name, line, col),
             Expr::Set { object, name, value } => self.eval_set(object, name, value),
             Expr::Array { elements } => self.eval_array(elements),
+            Expr::Hashmap { fields } => self.eval_hashmap(fields),
+            Expr::Field { .. } => Ok(Value::NULL),
         }
     }
 
@@ -401,5 +403,23 @@ impl Interpreter {
         }
 
         Ok(Value::ARRAY(items))
+    }
+
+    fn eval_hashmap(&mut self, fields: &Vec<Box<Expr>>) -> IResult<Value> {
+        let mut hashmap: HashMap<String, Box<Value>> = HashMap::new();
+
+        for field in fields {
+            match *field.clone() {
+                Expr::Field { key, value, .. } => {
+                    let value = self.eval_expression(&value)?;
+                    hashmap.insert(key, Box::new(value));
+                },
+                _ => {
+                    return Err(InterpreterError::InvalidStatement { message: "Invalid field inside hashmap".into() });
+                }
+            }
+        }
+
+        Ok(Value::HASHMAP(hashmap))
     }
 }

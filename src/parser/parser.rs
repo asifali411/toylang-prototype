@@ -298,6 +298,26 @@ impl Parser {
         return Ok(Expr::Array { elements });
     }
 
+    fn create_hashmap(&mut self) -> PResult<Expr> {
+        let mut fields = Vec::new();
+
+        if !self.compare(TokenKind::CLOSE_BRACK) {
+            loop {
+                fields.push(Box::new(self.expression()?));
+
+                if !self.compare(TokenKind::COMMA) {
+                    break;
+                }
+
+                self.advance();
+            }
+        }
+
+        self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after hashmap.")?;
+
+        return Ok(Expr::Hashmap { fields });
+    }
+
     // ---------------------------------------------------------------
     // Expressions
     // ---------------------------------------------------------------
@@ -327,7 +347,6 @@ impl Parser {
                 name, 
                 ..
             } = expr {
-
                 return Ok(Expr::Set { object, name, value: Box::new(value) })
             }
 
@@ -335,6 +354,26 @@ impl Parser {
                 message: "Invalid assignment target".to_string(),
                 line: equals.span.line,
                 col: equals.span.column,
+            });
+        } else if self.compare(TokenKind::COLON) {
+            let colon = self.advance_token()?;
+            let value = self.assignment()?;
+
+            if let Expr::Var(tok) = expr {
+                if let TokenKind::IDENT(key) = tok.kind {
+                    return Ok(Expr::Field {
+                        key,
+                        value: Box::new(value), 
+                        line: tok.span.line,
+                        col: tok.span.column, 
+                    });
+                }
+            } 
+
+            return Err(ParseError::InvalidStatement { 
+                message: "Invalid key".to_string(), 
+                line: colon.span.line,
+                col: colon.span.column,
             });
         }
 
@@ -504,6 +543,7 @@ impl Parser {
                 }
                 TokenKind::IDENT(_) => Ok(Expr::Var(tok.clone())),
                 TokenKind::OPEN_BRACK => self.create_array(),
+                TokenKind::OPEN_BRACE => self.create_hashmap(),
                 _ => Err(ParseError::UnexpectedToken {
                     token: tok.to_string(),
                     line: tok.span.line,

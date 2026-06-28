@@ -45,6 +45,7 @@ impl Lexer {
             }
 
             ';' => self.add_token(TokenKind::SEMI),
+            ':' => self.add_token(TokenKind::COLON),
             ',' => self.add_token(TokenKind::COMMA),
             '.' => self.add_token(TokenKind::DOT),
 

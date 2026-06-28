@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::ops::{Add, Div, Mul, Neg, Sub, Not};
 use std::rc::Rc;
 
@@ -25,6 +26,7 @@ pub enum Value {
     CLASS(Class),
     OBJECT(Rc<RefCell<Instance>>),
     ARRAY(Vec<Box<Value>>),
+    HASHMAP(HashMap<String, Box<Value>>),
 
     NativeFunction {
         name: String,
