@@ -38,8 +38,7 @@ impl Lexer {
     fn scan_token(&mut self) -> LResult<()> {
         let c = self.advance();
         match c {
-            ' ' | '\t' => {}
-            '\r' => {}
+            ' ' | '\t' | '\r' => {}
             '\n' => {
                 self.line += 1;
                 self.column = 1;
@@ -129,12 +128,37 @@ impl Lexer {
     }
 
     fn scan_string(&mut self, quote: char) -> LResult<()> {
-        while !self.is_at_end() && self.peek() != quote {
-            if self.peek() == '\n' {
-                self.line += 1;
-                self.column = 1;
+        let mut value = String::new();
+
+        while !self.is_at_end() {
+            match self.peek() {
+                '\\' => {
+                    self.advance();
+        
+                    let escaped = match self.peek() {
+                        'n' => '\n',
+                        't' => '\t',
+                        'r' => '\r',
+                        '"' => '"',
+                        '\'' => '\'',
+                        '\\' => '\\',
+                        other => return Err(LexError::InvalidEscapeCharacter { 
+                            char: other, 
+                            line: self.line, 
+                            col: self.column }),
+                    };
+        
+                    value.push(escaped);
+                    self.advance();
+                }
+        
+                c if c == quote => break,
+        
+                c => {
+                    value.push(c);
+                    self.advance();
+                }
             }
-            self.advance();
         }
 
         if self.is_at_end() {
@@ -145,9 +169,8 @@ impl Lexer {
             });
         }
 
-        let string: String = self.source[self.start + 1..self.current].iter().collect();
         self.advance();
-        self.add_token(TokenKind::STRING(string));
+        self.add_token(TokenKind::STRING(value));
         Ok(())
     }
 

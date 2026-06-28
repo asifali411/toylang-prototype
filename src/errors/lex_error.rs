@@ -13,6 +13,9 @@ pub enum LexError {
         col: usize,
     },
 
+    #[error("Invalid escape character '\\{char}'\nat line: {line}, col: {col}")]
+    InvalidEscapeCharacter { char: char, line: usize, col: usize },
+
     #[error("{message}\nat line: {line}, col: {col}")]
     ExpectedCharacter { message: String, line: usize, col: usize }
 }
@@ -44,6 +47,18 @@ impl LexError {
                     lexeme.yellow(),
                     loc,
                 );
+            },
+            LexError::InvalidEscapeCharacter { char, line, col } => {
+                let loc = format!(" at line: {}, col: {} ", line, col)
+                .black()
+                .on_green();
+
+                eprintln!(
+                    "{}: Invalid escape character '\\{}'\n{}\n",
+                    prefix,
+                    char.to_string().yellow(),
+                    loc,
+                ); 
             }
             LexError::ExpectedCharacter { message, line, col } => {
                  let loc = format!(" at line: {}, col: {} ", line, col)
