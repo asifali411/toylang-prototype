@@ -41,13 +41,11 @@ pub fn convert_to_string(val: &Value) -> String {
 }
 
 pub fn to_string(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
-  if args.len() > 1 {
+  if args.len() != 1 {
     return Err(InterpreterError::ArityMismatch { expected: 1, got: args.len() });
   }
-
-  let val = convert_to_string(&args[0]);
-
-  Ok(Value::STRING(val))
+  
+  Ok(Value::STRING(convert_to_string(&args[0])))
 }
 
 pub fn extract_type(val: &Value) -> String {
@@ -62,4 +60,12 @@ pub fn extract_type(val: &Value) -> String {
     Value::CLASS(_) => String::from("class"),
     Value::NativeFunction { .. } => String::from("function"),
   }
+}
+
+pub fn type_of(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
+  if args.len() != 1 {
+    return Err(InterpreterError::ArityMismatch { expected: 1, got: args.len() });
+  }
+
+  Ok(Value::STRING(extract_type(&args[0])))
 }
