@@ -315,6 +315,32 @@ impl Interpreter {
             Value::CLASS(class) => Ok(class.call(self, args)?),
             Value::NativeFunction { func , ..} => {
                 func(self, args)
+            },
+            Value::ARRAY(arr) => {
+                let index = &args[0];
+                match index {
+                    Value::NUM(n) => {
+                        if n.is_finite() && n.fract() == 0.0 {
+                            let len_i = arr.len() as i64;
+                            let n_i = *n as i64;
+                            
+                            let target_index = if n_i < 0 { len_i + n_i } else { n_i };
+                        
+                            if target_index >= 0 && target_index < len_i {
+                                Ok((*arr[target_index as usize]).clone())
+                            } else {
+                                Err(InterpreterError::InvalidStatement { 
+                                    message: format!("Array index {} out of bounds for length {}", n, arr.len()) 
+                                })
+                            }
+                        } else {
+                            Err(InterpreterError::InvalidStatement { 
+                                message: "Array index must be a finite integer".into() 
+                            })
+                        }                        
+                    },
+                    _ => Err(InterpreterError::InvalidStatement { message: "Array index must be a finite integer".into() }),
+                }
             }
             _ => Err(InterpreterError::UndefinedFunction {
                 func: format!("{:?}", callee),

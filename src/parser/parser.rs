@@ -442,30 +442,46 @@ impl Parser {
         let mut expr = self.primary()?;
     
         loop {
-            if self.compare(TokenKind::OPEN_PAREN) {
-                if let Some(tok) = self.advance() {
-                    let tok = tok.clone();
-                    expr = self.finish_call(expr, tok.span.line, tok.span.column)?;
-                } else {
-                    return Err(ParseError::UnexpectedEof);
-                }
-            } else if self.compare(TokenKind::DOT) {
-                self.advance();
-                let tok = self.consume_ident("Expect property name after '.'")?;
-    
-                if let TokenKind::IDENT(name) = tok.kind {
-                    let line = tok.span.line;
-                    let col = tok.span.column;
-    
-                    expr = Expr::Get {
-                        object: Box::new(expr),
-                        name,
-                        line,
-                        col,
+            let tok = self.peek();
+            if tok == None { break; }
+            let tok = tok.unwrap().clone();
+            match &tok.kind {
+                TokenKind::OPEN_PAREN => {
+                    if let Some(tok) = self.advance() {
+                        let tok = tok.clone();
+                        expr = self.finish_call(expr, tok.span.line, tok.span.column)?;
+                    } else {
+                        return Err(ParseError::UnexpectedEof);
+                    }
+                },
+                TokenKind::DOT => {
+                    self.advance();
+                    let tok = self.consume_ident("Expect property name after '.'")?;
+        
+                    if let TokenKind::IDENT(name) = tok.kind {
+                        let line = tok.span.line;
+                        let col = tok.span.column;
+        
+                        expr = Expr::Get {
+                            object: Box::new(expr),
+                            name,
+                            line,
+                            col,
+                        };
+                    }
+                },
+                TokenKind::OPEN_BRACK => {
+                    self.advance();
+                    let index = self.expression()?;
+                    self.consume(TokenKind::CLOSE_BRACK, "Expect ']' after array indexing")?;
+                    expr = Expr::Call { 
+                        callee: Box::new(expr), 
+                        arguments: vec![Box::new(index)], 
+                        line: tok.span.line, 
+                        col: tok.span.column,
                     };
                 }
-            } else {
-                break;
+                _ => break,
             }
         }
     

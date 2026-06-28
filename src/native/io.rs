@@ -3,10 +3,11 @@ use std::io::{self, Write};
 use crate::{errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{Interpreter, value::Value}, native::types::convert_to_string};
 
 pub fn output(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
-  for val in args {
-    print!("{}", convert_to_string(&val));
+  for i in 0..(args.len() - 1) {
+    print!("{}", convert_to_string(&args[i]));
     print!(" ");
   }
+  print!("{}", convert_to_string(&args[args.len() - 1]));
 
   Ok(Value::NULL)
 }
