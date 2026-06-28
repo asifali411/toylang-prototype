@@ -28,11 +28,20 @@ impl Instance {
   }
 
   pub fn bind(&self, mut method: Function, this: Rc<RefCell<Instance>>) -> Function {
-    let env = Environment::new_enclosed(method.closure.clone());
-    env.borrow_mut().define_var("this", Value::OBJECT(this));
-    method.closure = env;
+    if let Some(superclass) = &self.class.superclass {
+        let super_env = Environment::new_enclosed(method.closure.clone());
+        super_env.borrow_mut().define_var("super", Value::CLASS(*superclass.clone()));
+
+        let this_env = Environment::new_enclosed(super_env);
+        this_env.borrow_mut().define_var("this", Value::OBJECT(this));
+        method.closure = this_env;
+    } else {
+        let env = Environment::new_enclosed(method.closure.clone());
+        env.borrow_mut().define_var("this", Value::OBJECT(this));
+        method.closure = env;
+    }
     method
-  }
+}
 
   pub fn class_name(&self) -> String {
     self.class.name().to_string()

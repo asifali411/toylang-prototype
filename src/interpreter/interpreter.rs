@@ -104,7 +104,6 @@ impl Interpreter {
             Expr::Call { callee, arguments, line, col } => self.eval_call(callee, arguments, line, col),
             Expr::Get { object, name, line, col } => self.eval_get(object, name, line, col),
             Expr::Set { object, name, value } => self.eval_set(object, name, value),
-            // _ => return Err(InterpreterError::UnexpectedExpr),
         }
     }
 
@@ -329,6 +328,24 @@ impl Interpreter {
             Value::OBJECT(obj) => {
                 let rc = Rc::clone(&obj);
                 obj.borrow().get(name.clone(), *line, *col, rc)
+            }
+            Value::CLASS(class) => {
+                let method = class.find_method(name)
+                    .ok_or_else(|| InterpreterError::UndefinedProperty {
+                        prop: name.clone(),
+                        line: *line,
+                        col: *col,
+                    })?;
+    
+                let this = self.environment.borrow().get_var("this", *line, *col);
+                if let Some(Value::OBJECT(instance)) = this {
+                    let bound = instance.borrow().bind(method, Rc::clone(&instance));
+                    Ok(Value::FUNC(bound))
+                } else {
+                    Err(InterpreterError::InvalidStatement {
+                        message: "Cannot use 'super' outside of a class instance".to_string(),
+                    })
+                }
             }
             _ => Err(InterpreterError::InvalidStatement {
                 message: "Only objects have properties".to_string(),

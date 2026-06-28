@@ -75,6 +75,8 @@ impl Resolver {
 
         if let Some(superclass) = superclass {
           self.resolve_expr(superclass);
+          self.begin_scope();
+          self.scopes.last_mut().unwrap().insert("super".to_string(), true);
         }
 
         self.begin_scope();
@@ -83,6 +85,9 @@ impl Resolver {
           self.resolve_stmt(method);
         }
         self.end_scope();
+        if let Some(_) = superclass {
+          self.end_scope();
+        }
       }
 
       Stmt::Return(expr) => self.resolve_expr(expr),

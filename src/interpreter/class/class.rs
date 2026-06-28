@@ -6,7 +6,7 @@ use crate::{errors::{interpreter_error::InterpreterError, lang_error::IResult}, 
 pub struct Class {
   name: String,
   methods: HashMap<String, Function>,
-  superclass: Option<Box<Class>>,
+  pub superclass: Option<Box<Class>>,
 }
 
 impl Class {
