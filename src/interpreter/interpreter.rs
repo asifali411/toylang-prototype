@@ -36,7 +36,6 @@ impl Interpreter {
     pub(crate) fn execute_stmt(&mut self, statement: &Stmt) -> Result<Value, Signal> {
         match statement {
             Stmt::Expr(expr) => self.eval_expression(expr).map_err(Signal::Error),
-            Stmt::Print(expr) => self.execute_print_statement(expr).map_err(Signal::Error),
             Stmt::Var { name, initializer } => {
                 self.eval_var_statement(name, initializer).map_err(Signal::Error)
             }
@@ -149,20 +148,6 @@ impl Interpreter {
         self.environment.borrow_mut().define_class(class_name, class);
 
         Ok(Value::NULL)
-    }
-
-    fn execute_print_statement(&mut self, expr: &Expr) -> IResult<Value> {
-        let val = self.eval_expression(expr)?;
-        match &val {
-            Value::NUM(n) => println!("{}", n),
-            Value::NULL => println!("null"),
-            Value::TRUE => println!("true"),
-            Value::FALSE => println!("false"),
-            Value::STRING(v) => println!("{}", v),
-            Value::OBJECT(obj) => println!("<instance of {}>", obj.borrow().class_name()),
-            other => println!("{:?}", other),
-        }
-        Ok(val)
     }
 
     pub fn execute_block(

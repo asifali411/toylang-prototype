@@ -33,7 +33,6 @@ pub enum TokenKind {
 
     IF,
     ELSE,
-    PRINT,
     VAR,
     TRUE,
     FALSE,

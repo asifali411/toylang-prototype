@@ -178,7 +178,6 @@ impl Lexer {
 
     fn keyword(s: &str) -> Option<TokenKind> {
         match s {
-            "print"  => Some(TokenKind::PRINT),
             "var"    => Some(TokenKind::VAR),
             "true"   => Some(TokenKind::TRUE),
             "false"  => Some(TokenKind::FALSE),

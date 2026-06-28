@@ -99,7 +99,7 @@ impl Resolver {
         self.resolve_stmt(body);
       }
 
-      Stmt::Expr(e) | Stmt::Print(e) => self.resolve_expr(e),
+      Stmt::Expr(e) => self.resolve_expr(e),
     }
   }
 

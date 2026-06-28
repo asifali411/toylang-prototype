@@ -161,7 +161,6 @@ impl Parser {
     fn statement(&mut self) -> PResult<Stmt> {
         match self.peek() {
             Some(tok) => match tok.kind {
-                TokenKind::PRINT => self.print_statement(),
                 TokenKind::OPEN_BRACE => self.block(),
                 TokenKind::IF => self.if_statement(),
                 TokenKind::LOOP => match self.peek_next() {
@@ -180,14 +179,7 @@ impl Parser {
         self.consume(TokenKind::SEMI, "Expect ';' after expression")?;
         Ok(Stmt::Expr(expr))
     }
-
-    fn print_statement(&mut self) -> PResult<Stmt> {
-        self.advance();
-        let expr = self.expression()?;
-        self.consume(TokenKind::SEMI, "Expect ';' after print statement")?;
-        Ok(Stmt::Print(expr))
-    }
-
+    
     fn if_statement(&mut self) -> PResult<Stmt> {
         self.advance();
         let condition = self.expression()?;

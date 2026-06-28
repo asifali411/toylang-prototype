@@ -4,7 +4,6 @@ use std::rc::Rc;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
     Expr(Expr),
-    Print(Expr),
     Var {
         name: String,
         initializer: Option<Expr>,
