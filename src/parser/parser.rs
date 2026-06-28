@@ -4,6 +4,7 @@ use crate::{
     lexer::token::{Token, TokenKind},
     parser::expression::Expr,
 };
+use std::rc::Rc;
 
 type PResult<T> = Result<T, ParseError>;
 
@@ -120,7 +121,7 @@ impl Parser {
         Ok(Stmt::Func {
             name,
             parameters,
-            body: Box::new(body),
+            body: Rc::new(body),
         })
     }
 

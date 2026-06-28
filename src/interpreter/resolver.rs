@@ -63,7 +63,9 @@ impl Resolver {
             self.define(n);
           }
         }
-        self.resolve_stmt(body);
+        if let Stmt::Block(stmts) = body.as_ref() {
+          for s in stmts { self.resolve_stmt(s); }
+        }
         self.end_scope();
       }
 

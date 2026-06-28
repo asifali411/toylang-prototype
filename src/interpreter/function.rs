@@ -14,24 +14,21 @@ type Env = Rc<RefCell<Environment>>;
 pub struct Function {
     name: String,
     parameters: Vec<Token>,
-    body: Vec<Box<Stmt>>,
+    body: Rc<Stmt>,
     pub closure: Env,
     is_init: bool,
 }
 
 impl Function {
-    pub fn new(name: String, parameters: Vec<Token>, body: Box<Stmt>, environment: &Env, is_init: bool) -> Self {
-        let stmts = match *body {
-            Stmt::Block(stmts) => stmts,
-            other => panic!(
-                "Function body must be a Block statement, got: {:?}",
-                other
-            ),
-        };
+    pub fn new(name: String, parameters: Vec<Token>, body: Rc<Stmt>, environment: &Env, is_init: bool) -> Self {
+        if let Stmt::Block(_) = body.as_ref() {
+        } else {
+            panic!("Function body must be a Block statement");
+        }
         Self {
             name,
             parameters,
-            body: stmts,
+            body,
             closure: environment.clone(),
             is_init,
         }
@@ -65,7 +62,11 @@ impl Function {
             };
         }
 
-        match interpreter.execute_block(&self.body, env) {
+        let previous = std::mem::replace(&mut interpreter.environment, env);
+        let result = interpreter.execute_stmt(self.body.as_ref());
+        interpreter.environment = previous;
+
+        match result {
             Ok(_) => Ok(Value::NULL),
             Err(Signal::Return(_)) if self.is_init => Ok(Value::NULL),
             Err(Signal::Return(value)) => Ok(value),

@@ -1,4 +1,5 @@
 use crate::{lexer::token::Token, parser::expression::Expr};
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
@@ -25,7 +26,7 @@ pub enum Stmt {
     Func {
         name: String,
         parameters: Vec<Token>,
-        body: Box<Stmt>,
+        body: Rc<Stmt>,
     },
     Return(Expr),
     Class {

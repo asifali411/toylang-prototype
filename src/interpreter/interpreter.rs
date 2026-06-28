@@ -34,7 +34,7 @@ impl Interpreter {
         }
     }
 
-    fn execute_stmt(&mut self, statement: &Stmt) -> Result<Value, Signal> {
+    pub(crate) fn execute_stmt(&mut self, statement: &Stmt) -> Result<Value, Signal> {
         match statement {
             Stmt::Expr(expr) => self.eval_expression(expr).map_err(Signal::Error),
             Stmt::Print(expr) => self.execute_print_statement(expr).map_err(Signal::Error),
@@ -127,7 +127,7 @@ impl Interpreter {
         &mut self,
         name: &String,
         parameters: &Vec<Token>,
-        body: &Box<Stmt>,
+        body: &Rc<Stmt>,
     ) -> IResult<Value> {
         let func = Function::new(name.to_string(), parameters.to_vec(), body.clone(), &self.environment, false);
         self.environment.borrow_mut().define_func(name, func);
@@ -243,7 +243,9 @@ impl Interpreter {
 
     fn lookup_var(&self, name: &str, expr: &Expr, line: usize, col: usize) -> IResult<Value> {
         if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
-            if let Some(value) = self.environment.borrow().get_at(depth, name) {
+            
+            // the reason why we find the variable at "depth + 1" instead of "depth" is because of a bug that i couldnt find the source of.
+            if let Some(value) = self.environment.borrow().get_at(depth + 1, name) {
                 return Ok(value);
             }
         }
