@@ -1,4 +1,4 @@
-use crate::errors::parse_error::ParseError;
+use crate::errors::parse_error::ParseError::{self, UnexpectedEof};
 use crate::parser::statement::Stmt;
 use crate::{
     lexer::token::{Token, TokenKind},
@@ -140,6 +140,19 @@ impl Parser {
             None => return Err(ParseError::UnexpectedEof),
         };
         self.advance();
+        let superclass = match self.peek() {
+            Some(tok) => {
+                match tok.kind {
+                    TokenKind::INHERIT => {
+                        self.advance();
+                        Some(Expr::Var(self.consume_ident("Expect superclass name after 'inherit' keyword")?))
+                    },
+                    _ => None,
+                }
+            },
+            None => return Err(UnexpectedEof),
+        };
+
         self.consume(TokenKind::OPEN_BRACE, "Expect '{' before class body")?;
 
         let mut methods: Vec<Stmt> = Vec::new();
@@ -150,7 +163,7 @@ impl Parser {
 
         self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after class body")?;
         
-        Ok(Stmt::Class { name, methods })
+        Ok(Stmt::Class { name, methods, superclass })
 
     }
 
@@ -179,7 +192,7 @@ impl Parser {
         self.consume(TokenKind::SEMI, "Expect ';' after expression")?;
         Ok(Stmt::Expr(expr))
     }
-    
+
     fn if_statement(&mut self) -> PResult<Stmt> {
         self.advance();
         let condition = self.expression()?;

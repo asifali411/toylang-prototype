@@ -69,9 +69,13 @@ impl Resolver {
         self.end_scope();
       }
 
-      Stmt::Class { name, methods } => {
+      Stmt::Class { name, methods, superclass } => {
         self.declare(name);
         self.define(name);
+
+        if let Some(superclass) = superclass {
+          self.resolve_expr(superclass);
+        }
 
         self.begin_scope();
         self.scopes.last_mut().unwrap().insert("this".to_string(), true);

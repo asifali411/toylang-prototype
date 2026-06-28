@@ -11,25 +11,26 @@ pub enum Stmt {
     Block(Vec<Box<Stmt>>),
     If {
         condition: Expr,
-        if_body: Box<Stmt>,
-        else_body: Option<Box<Stmt>>,
+        if_body: Box<Stmt>, // expect Block
+        else_body: Option<Box<Stmt>>, // expect Block
     },
     Loop {
         count: Expr,
-        body: Box<Stmt>,
+        body: Box<Stmt>, // expect Block
     },
     LoopIf {
         condition: Expr,
-        body: Box<Stmt>,
+        body: Box<Stmt>, // expect Block
     },
     Func {
         name: String,
         parameters: Vec<Token>,
-        body: Rc<Stmt>,
+        body: Rc<Stmt>, // expect Block
     },
     Return(Expr),
     Class {
         name: String,
         methods: Vec<Stmt>,
+        superclass: Option<Expr>, // expect Var
     }
 }

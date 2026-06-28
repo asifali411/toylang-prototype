@@ -6,13 +6,15 @@ use crate::{errors::{interpreter_error::InterpreterError, lang_error::IResult}, 
 pub struct Class {
   name: String,
   methods: HashMap<String, Function>,
+  superclass: Option<Box<Class>>,
 }
 
 impl Class {
-  pub fn new(name: String, methods: HashMap<String, Function>) -> Self {
+  pub fn new(name: String, methods: HashMap<String, Function>, superclass: Option<Box<Class>>) -> Self {
     Self {
       name,
       methods,
+      superclass,
     }
   }
 
@@ -36,6 +38,10 @@ impl Class {
   pub fn find_method(&self, name: &str) -> Option<Function> {
     if let Some(method) = self.methods.get(name) {
       return Some(method.clone());
+    }
+
+    if let Some(superclass) = &self.superclass {
+      return superclass.find_method(name);
     }
 
     None

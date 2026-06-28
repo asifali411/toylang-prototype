@@ -58,8 +58,8 @@ impl Interpreter {
                 let value = self.eval_expression(expr).map_err(Signal::Error)?;
                 Err(Signal::Return(value))
             }
-            Stmt::Class { name, methods } => {
-                self.eval_class_statement(name, methods).map_err(Signal::Error)
+            Stmt::Class { name, methods, superclass } => {
+                self.eval_class_statement(name, methods, superclass).map_err(Signal::Error)
             }
         }
     }
@@ -132,7 +132,7 @@ impl Interpreter {
         Ok(Value::NULL)
     }
 
-    pub fn eval_class_statement(&mut self, class_name: &str, methods: &Vec<Stmt>) -> IResult<Value> {
+    pub fn eval_class_statement(&mut self, class_name: &str, methods: &Vec<Stmt>, superclass: &Option<Expr>) -> IResult<Value> {
         let mut functions: HashMap<String, Function> = HashMap::new();
         for method in methods {
             match method {
@@ -143,9 +143,26 @@ impl Interpreter {
                 _ => {},
             }
         }
-        
-        let class = Class::new(class_name.to_string(), functions);
-        self.environment.borrow_mut().define_class(class_name, class);
+
+        if let Some(Expr::Var(Token { kind: TokenKind::IDENT(superclass_name), .. })) = superclass {
+            if class_name == superclass_name {
+                return Err(InterpreterError::InvalidStatement {
+                    message: "A class cannot inherit from itself".into(),
+                });
+            }
+
+            let superclass = self.eval_expression(&superclass.as_ref().unwrap())?;
+            
+            if let Value::CLASS(superclass) = superclass {
+                let class = Class::new(class_name.to_string(), functions, Some(Box::new(superclass)));
+                self.environment.borrow_mut().define_class(class_name, class);
+            } else {
+                return Err(InterpreterError::InvalidStatement { message: "Superclass must be a class".into() });
+            }
+        } else {
+            let class = Class::new(class_name.to_string(), functions, None);
+            self.environment.borrow_mut().define_class(class_name, class);
+        }
 
         Ok(Value::NULL)
     }
