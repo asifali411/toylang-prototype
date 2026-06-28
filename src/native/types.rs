@@ -9,7 +9,7 @@ pub fn to_num(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
     Value::STRING(num) => {
       let n = num.parse::<f64>();
       if n.is_err() {
-        return Err(InterpreterError::InvalidStatement { message: format!("Cannot convert {} to number", num) });
+        return Err(InterpreterError::InvalidStatement { message: format!("Cannot convert \"{}\" to number", num) });
       } else {
         let n = n.unwrap();
         return Ok(Value::NUM(n));
@@ -44,6 +44,21 @@ pub fn to_string(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> 
   }
   
   Ok(Value::STRING(convert_to_string(&args[0])))
+}
+
+pub fn to_bool(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
+  if args.len() != 1 {
+    return Err(InterpreterError::ArityMismatch { expected: 1, got: args.len() });
+  }
+
+  let res = convert_to_string(&args[0]);
+  match &res[..] {
+    "true" => Ok(Value::TRUE),
+    "false" => Ok(Value::FALSE),
+    _ => Err(InterpreterError::InvalidStatement {
+      message: format!("Cannot convert \"{res}\" to boolean")
+    }),
+  }
 }
 
 pub fn extract_type(val: &Value) -> String {
