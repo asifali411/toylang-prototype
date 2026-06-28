@@ -1,12 +1,11 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    errors::interpreter_error::InterpreterError, interpreter::{
+    errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{
         class::class::Class, environment::Environment, function::Function, signal::Signal, value::Value,
     }, lexer::token::{Token, TokenKind}, parser::{expression::Expr, statement::Stmt},
 };
 
-type IResult<T> = Result<T, InterpreterError>;
 type Env = Rc<RefCell<Environment>>;
 
 #[derive(Debug)]
@@ -243,7 +242,7 @@ impl Interpreter {
 
     fn lookup_var(&self, name: &str, expr: &Expr, line: usize, col: usize) -> IResult<Value> {
         if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
-            
+
             // the reason why we find the variable at "depth + 1" instead of "depth" is because of a bug that i couldnt find the source of.
             if let Some(value) = self.environment.borrow().get_at(depth + 1, name) {
                 return Ok(value);

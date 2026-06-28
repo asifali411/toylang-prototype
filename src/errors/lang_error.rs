@@ -26,3 +26,5 @@ impl LangError {
       }
   }
 }
+
+pub type IResult<T> = Result<T, InterpreterError>;

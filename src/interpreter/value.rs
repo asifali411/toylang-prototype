@@ -4,6 +4,7 @@ use std::ops::{Add, Div, Mul, Neg, Sub, Not};
 use std::rc::Rc;
 
 use crate::errors::interpreter_error::InterpreterError;
+use crate::errors::lang_error::IResult;
 use crate::interpreter::Interpreter;
 use crate::interpreter::class::class::Class;
 use crate::interpreter::class::instance::Instance;
@@ -11,7 +12,6 @@ use crate::interpreter::function::Function;
 use crate::native::types::{convert_to_string, extract_type};
 
 pub type NativeFn = fn(&mut Interpreter, Vec<Value>) -> Result<Value, InterpreterError>;
-type IResult<T> = Result<T, InterpreterError>;
 
 #[derive(Debug, Clone)]
 pub enum Value {

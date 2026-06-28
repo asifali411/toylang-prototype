@@ -1,6 +1,4 @@
-use crate::{errors::interpreter_error::InterpreterError, interpreter::{Interpreter, value::Value}};
-
-type IResult<T> = Result<T, InterpreterError>;
+use crate::{errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{Interpreter, value::Value}};
 
 pub fn to_num(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
   if args.len() > 1 {

@@ -1,8 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{errors::interpreter_error::InterpreterError, interpreter::{class::class::Class, environment::Environment, function::Function, value::Value}};
-
-type IResult<T> = Result<T, InterpreterError>;
+use crate::{errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{class::class::Class, environment::Environment, function::Function, value::Value}};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Instance {

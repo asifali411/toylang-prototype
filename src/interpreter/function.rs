@@ -1,13 +1,9 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    errors::interpreter_error::InterpreterError,
-    interpreter::{environment::Environment, signal::Signal, value::Value},
-    lexer::token::{Token, TokenKind},
-    parser::statement::Stmt,
+    errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{environment::Environment, signal::Signal, value::Value}, lexer::token::{Token, TokenKind}, parser::statement::Stmt,
 };
 
-type IResult<T> = Result<T, InterpreterError>;
 type Env = Rc<RefCell<Environment>>;
 
 #[derive(Debug, Clone, PartialEq)]

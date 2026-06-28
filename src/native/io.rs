@@ -1,8 +1,6 @@
 use std::io::{self, Write};
 
-use crate::{errors::interpreter_error::InterpreterError, interpreter::{Interpreter, value::Value}, native::types::convert_to_string};
-
-type IResult<T> = Result<T, InterpreterError>;
+use crate::{errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{Interpreter, value::Value}, native::types::convert_to_string};
 
 pub fn output(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
   for val in args {
