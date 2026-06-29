@@ -26,6 +26,11 @@ pub enum Expr {
         line: usize,
         col: usize,
     },
+    CompoundAssign {
+        name: String,
+        value: Box<Expr>,
+        op: Token,
+    },
     Call {
         callee: Box<Expr>,
         arguments: Vec<Box<Expr>>,

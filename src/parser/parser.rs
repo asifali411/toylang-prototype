@@ -370,6 +370,22 @@ impl Parser {
                 line: equals.span.line,
                 col: equals.span.column,
             });
+        } 
+        
+        if self.compare(TokenKind::PLUS_EQ) || self.compare(TokenKind::MINUS_EQ)
+        || self.compare(TokenKind::STAR_EQ) || self.compare(TokenKind::SLASH_EQ) {
+            let op = self.advance_token()?;
+            let value = self.assignment()?;
+
+            if let Expr::Var(ref tok) = expr {
+                if let TokenKind::IDENT(name) = &tok.kind {
+                    return Ok(Expr::CompoundAssign {
+                        name: name.to_string(), 
+                        value: Box::new(value),
+                        op,
+                    });
+                }
+            }
         }
 
         Ok(expr)

@@ -49,6 +49,11 @@ pub enum TokenKind {
     INC,
     DEC,
 
+    PLUS_EQ,
+    MINUS_EQ,
+    STAR_EQ,
+    SLASH_EQ,
+
     EQUAL,
     NOT,
 

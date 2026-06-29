@@ -129,6 +129,10 @@ impl Resolver {
             self.resolve_expr(value);
             self.resolve_local(expr as *const Expr, name);
         }
+        Expr::CompoundAssign { name, value, .. } => {
+          self.resolve_expr(value);
+          self.resolve_local(expr as *const Expr, name);
+        }
         Expr::Binary { left, right, .. } => {
             self.resolve_expr(left);
             self.resolve_expr(right);

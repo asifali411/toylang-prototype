@@ -12,20 +12,11 @@ pub enum ParseError {
     #[error("{message} at {line}:{col}")]
     ExpectedToken { message: String, line: usize, col: usize },
 
-    /// Replaces ExpectedVariableName, ExpectedFunctionName, ExpectedClassName.
-    /// `keyword` is the keyword that was seen (e.g. "var", "func", "class").
     #[error("Expected name after '{keyword}' keyword at {line}:{col}")]
     ExpectedName { keyword: &'static str, line: usize, col: usize },
 
     #[error("Invalid statement: {message} at {line}:{col}")]
     InvalidStatement { message: String, line: usize, col: usize },
-
-    // --- new ---
-    #[error("Unterminated string literal at {line}:{col}")]
-    UnterminatedString { line: usize, col: usize },
-
-    #[error("Maximum expression nesting depth exceeded at {line}:{col}")]
-    NestingDepthExceeded { line: usize, col: usize },
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -36,9 +27,7 @@ impl ParseError {
             Self::UnexpectedToken { line, col, .. }
             | Self::ExpectedToken { line, col, .. }
             | Self::ExpectedName { line, col, .. }
-            | Self::InvalidStatement { line, col, .. }
-            | Self::UnterminatedString { line, col }
-            | Self::NestingDepthExceeded { line, col } => Some((*line, *col)),
+            | Self::InvalidStatement { line, col, .. } => Some((*line, *col)),
             Self::UnexpectedEof => None,
         }
     }
@@ -55,10 +44,6 @@ impl ParseError {
             }
             Self::InvalidStatement { message, .. } => {
                 format!("Invalid statement: {message}")
-            }
-            Self::UnterminatedString { .. } => "Unterminated string literal".to_string(),
-            Self::NestingDepthExceeded { .. } => {
-                "Maximum expression nesting depth exceeded".to_string()
             }
         }
     }

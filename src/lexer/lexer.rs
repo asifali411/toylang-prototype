@@ -50,20 +50,33 @@ impl Lexer {
             '.' => self.add_token(TokenKind::DOT),
 
             '+' => {
-                let kind = if self.match_next('+') { TokenKind::INC } else { TokenKind::PLUS };
+                let kind = if self.match_next('+') { 
+                    TokenKind::INC 
+                } else if self.match_next('=') {
+                    TokenKind::PLUS_EQ
+                } else { TokenKind::PLUS };
                 self.add_token(kind);
             },
             '-' => {
-                let kind = if self.match_next('-') { TokenKind::DEC } else { TokenKind::MINUS };
+                let kind = if self.match_next('-') { 
+                    TokenKind::DEC 
+                } else if self.match_next('=') {
+                    TokenKind::MINUS_EQ
+                }else { TokenKind::MINUS };
                 self.add_token(kind);
             },
-            '*' => self.add_token(TokenKind::STAR),
+            '*' => {
+                let kind  = if self.match_next('=') { TokenKind::STAR_EQ } else { TokenKind::STAR };
+                self.add_token(kind);
+            },
 
             '/' => {
                 if self.match_next('/') {
                     while self.peek() != '\n' && !self.is_at_end() {
                         self.advance();
                     }
+                } else if self.match_next('=') {
+                    self.add_token(TokenKind::SLASH_EQ);
                 } else {
                     self.add_token(TokenKind::SLASH);
                 }
