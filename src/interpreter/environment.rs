@@ -1,7 +1,7 @@
 use crate::{errors::interpreter_error::InterpreterError, interpreter::{class::class::Class, function::Function, value::Value}};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-type Env = Rc<RefCell<Environment>>;
+pub type Env = Rc<RefCell<Environment>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
