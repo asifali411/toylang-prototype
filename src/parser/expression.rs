@@ -42,6 +42,10 @@ pub enum Expr {
     Array {
         elements: Vec<Box<Expr>>,
     },
+    Index {
+        object: Box<Expr>,
+        index: Box<Expr>,
+    },
     Hashmap {
         fields: Vec<(String, Box<Expr>)>,
     },

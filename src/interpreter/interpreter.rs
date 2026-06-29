@@ -106,6 +106,7 @@ impl Interpreter {
             Expr::Set { object, name, value } => self.eval_set(object, name, value),
             Expr::Array { elements } => self.eval_array(elements),
             Expr::Hashmap { fields } => self.eval_hashmap(fields),
+            Expr::Index { object, index } => self.eval_index(object, index),
         }
     }
 
@@ -317,32 +318,6 @@ impl Interpreter {
             Value::NativeFunction { func , ..} => {
                 func(self, args)
             },
-            Value::ARRAY(arr) => {
-                let index = &args[0];
-                match index {
-                    Value::NUM(n) => {
-                        if n.is_finite() && n.fract() == 0.0 {
-                            let len_i = arr.len() as i64;
-                            let n_i = *n as i64;
-                            
-                            let target_index = if n_i < 0 { len_i + n_i } else { n_i };
-                        
-                            if target_index >= 0 && target_index < len_i {
-                                Ok((*arr[target_index as usize]).clone())
-                            } else {
-                                Err(InterpreterError::InvalidStatement { 
-                                    message: format!("Array index {} out of bounds for length {}", n, arr.len()) 
-                                })
-                            }
-                        } else {
-                            Err(InterpreterError::InvalidStatement { 
-                                message: "Array index must be a finite integer".into() 
-                            })
-                        }                        
-                    },
-                    _ => Err(InterpreterError::InvalidStatement { message: "Array index must be a finite integer".into() }),
-                }
-            }
             _ => Err(InterpreterError::UndefinedFunction {
                 func: format!("{:?}", callee),
                 line: *line,
@@ -412,4 +387,41 @@ impl Interpreter {
         }
         Ok(Value::HASHMAP(hashmap))
     }
+
+    fn eval_index(&mut self, object: &Box<Expr>, index: &Box<Expr>) -> IResult<Value> {
+        let index = self.eval_expression(index)?;
+        let object = self.eval_expression(object)?;
+
+        match object {
+            Value::ARRAY(arr) => {
+                match index {
+                    Value::NUM(n) => {
+                        if n.is_finite() && n.fract() == 0.0 {
+                            let len_i = arr.len() as i64;
+                            let n_i = n as i64;
+                            
+                            let target_index = if n_i < 0 { len_i + n_i } else { n_i };
+                        
+                            if target_index >= 0 && target_index < len_i {
+                                return Ok((*arr[target_index as usize]).clone());
+                            } else {
+                                return Err(InterpreterError::InvalidStatement { 
+                                    message: format!("Array index {} out of bounds for length {}", n, arr.len()) 
+                                });
+                            }
+                        } else {
+                            return Err(InterpreterError::InvalidStatement { 
+                                message: "Array index must be a finite integer".into() 
+                            });
+                        }                        
+                    },
+                    _ => return Err(InterpreterError::InvalidStatement { message: "Array index must be a finite integer".into() }),
+                }
+            },
+            _ => {}
+        }
+
+        Ok(Value::NULL)
+    }
+
 }

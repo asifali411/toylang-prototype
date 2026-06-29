@@ -314,14 +314,10 @@ impl Parser {
                 let value = self.expression()?;
                 fields.push((key, Box::new(value)));
 
-                if !self.compare(TokenKind::COMMA) {
-                    break;
-                }
-
-                // allow trailing commas
-                if self.compare(TokenKind::COMMA) && 
-                matches!(self.peek_next(), Some(tok) if tok.kind == TokenKind::CLOSE_BRACE) {
+                if self.compare(TokenKind::COMMA) {
                     self.advance();
+                    if self.compare(TokenKind::CLOSE_BRACE) { break; } // trailing comma
+                } else {
                     break;
                 }
     
@@ -509,12 +505,7 @@ impl Parser {
                     self.advance();
                     let index = self.expression()?;
                     self.consume(TokenKind::CLOSE_BRACK, "Expect ']' after array indexing")?;
-                    expr = Expr::Call { 
-                        callee: Box::new(expr), 
-                        arguments: vec![Box::new(index)], 
-                        line: tok.span.line, 
-                        col: tok.span.column,
-                    };
+                    expr = Expr::Index { object: Box::new(expr), index: Box::new(index) }
                 }
                 _ => break,
             }
