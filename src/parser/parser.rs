@@ -360,6 +360,8 @@ impl Parser {
                 ..
             } = expr {
                 return Ok(Expr::Set { object, name, value: Box::new(value) })
+            } else if let Expr::Index { object, index } = expr {
+                return Ok(Expr::IndexSet { object, index, value: Box::new(value), line: equals.span.line, col: equals.span.column });
             }
 
             return Err(ParseError::InvalidStatement {
