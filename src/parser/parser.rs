@@ -320,8 +320,6 @@ impl Parser {
                 } else {
                     break;
                 }
-    
-                self.advance();
             }
         }
     
