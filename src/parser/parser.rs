@@ -507,6 +507,13 @@ impl Parser {
                     let index = self.expression()?;
                     self.consume(TokenKind::CLOSE_BRACK, "Expect ']' after array indexing")?;
                     expr = Expr::Index { object: Box::new(expr), index: Box::new(index) }
+                },
+                TokenKind::INC | TokenKind::DEC => {
+                    let op = self.advance_token()?;
+                    expr = Expr::PostUnary {
+                        operator: op,
+                        left: Box::new(expr),
+                    };
                 }
                 _ => break,
             }

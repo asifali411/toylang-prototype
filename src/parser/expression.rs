@@ -8,6 +8,10 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    PostUnary {
+        operator: Token,
+        left: Box<Expr>,
+    },
     Binary {
         left: Box<Expr>,
         operator: Token,

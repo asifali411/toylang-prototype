@@ -86,6 +86,7 @@ impl Interpreter {
                 }
             }
             Expr::Unary { operator, right } => self.eval_unary(operator, right),
+            Expr::PostUnary { operator, left } => self.eval_post_unary(operator, left),
             Expr::Binary { left, operator, right } => self.eval_binary(left, operator, right),
             Expr::Group { expr } => self.eval_expression(expr),
             Expr::Assign { name, value, line, col } => self.eval_assign(expr, name, value, line, col),
@@ -282,6 +283,34 @@ impl Interpreter {
                 self.assign_back(expr, new_val.clone())?;
                 Ok(new_val)
             },
+            ref kind => Err(InterpreterError::UnsupportedUnaryOp { op: kind.clone() }),
+        }
+    }
+
+    fn eval_post_unary(&mut self, op: &Token, expr: &Expr) -> IResult<Value> {
+        let value = self.eval_expression(expr)?;
+
+        match op.kind {
+            TokenKind::INC => {
+                let new_val = match value {
+                    Value::NUM(n) => Value::NUM(n + 1.0),
+                    _ => return Err(InterpreterError::InvalidStatement {
+                        message: "Increment operator requires a number".into(),
+                    }),
+                };
+                self.assign_back(expr, new_val.clone())?;
+                Ok(value)
+            },
+            TokenKind::DEC => {
+                let new_val = match value {
+                    Value::NUM(n) => Value::NUM(n - 1.0),
+                    _ => return Err(InterpreterError::InvalidStatement {
+                        message: "Decrement operator requires a number".into(),
+                    }),
+                };
+                self.assign_back(expr, new_val.clone())?;
+                Ok(value)
+            }
             ref kind => Err(InterpreterError::UnsupportedUnaryOp { op: kind.clone() }),
         }
     }
