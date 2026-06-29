@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{Interpreter, value::Value}};
 
 pub fn to_num(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
@@ -34,6 +36,7 @@ pub fn convert_to_string(val: &Value) -> String {
     Value::FUNC(func) => format!("<function {}>", func.func_name()),
     Value::CLASS(cls) => format!("<class {}>", cls.name()),
     Value::ARRAY(elements) => format_array(elements),
+    Value::HASHMAP(hashmap) => format_hashmap(hashmap),
 
     Value::NativeFunction { name, ..} => format!("<native function {}>", name),
   }
@@ -48,6 +51,23 @@ fn format_array(array: &Vec<Box<Value>>) -> String {
   formatted.push_str(&convert_to_string(&array[array.len() - 1]));
   formatted.push(']');
   formatted
+}
+
+fn format_hashmap(hashmap: &HashMap<String, Box<Value>>) -> String {
+  let mut result = String::from("{");
+
+  for (i, (key, value)) in hashmap.iter().enumerate() {
+    let comma = if i + 1 == hashmap.len() { "" } else { "," };
+    result.push_str(&format!(
+      "{}: {}{}",
+      key,
+      convert_to_string(value),
+      comma
+    ));
+  }
+
+  result.push('}');
+  result
 }
 
 pub fn to_string(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
@@ -84,6 +104,7 @@ pub fn extract_type(val: &Value) -> String {
     Value::FUNC(_) => String::from("function"),
     Value::CLASS(_) => String::from("class"),
     Value::ARRAY(_) => String::from("array"),
+    Value::HASHMAP(_) => String::from("hashmap"),
     Value::NativeFunction { .. } => String::from("function"),
   }
 }

@@ -299,23 +299,39 @@ impl Parser {
     }
 
     fn create_hashmap(&mut self) -> PResult<Expr> {
-        let mut fields = Vec::new();
-
-        if !self.compare(TokenKind::CLOSE_BRACK) {
+        let mut fields: Vec<(String, Box<Expr>)> = Vec::new();
+    
+        if !self.compare(TokenKind::CLOSE_BRACE) {
             loop {
-                fields.push(Box::new(self.expression()?));
+                let key_tok = self.consume_ident("Expect key name in hashmap")?;
+                let key = match key_tok.kind {
+                    TokenKind::IDENT(name) => name,
+                    _ => unreachable!(),
+                };
+    
+                self.consume(TokenKind::COLON, "Expect ':' after hashmap key")?;
+    
+                let value = self.expression()?;
+                fields.push((key, Box::new(value)));
 
                 if !self.compare(TokenKind::COMMA) {
                     break;
                 }
 
+                // allow trailing commas
+                if self.compare(TokenKind::COMMA) && 
+                matches!(self.peek_next(), Some(tok) if tok.kind == TokenKind::CLOSE_BRACE) {
+                    self.advance();
+                    break;
+                }
+    
                 self.advance();
             }
         }
-
-        self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after hashmap.")?;
-
-        return Ok(Expr::Hashmap { fields });
+    
+        self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after hashmap body")?;
+    
+        Ok(Expr::Hashmap { fields })
     }
 
     // ---------------------------------------------------------------
@@ -354,26 +370,6 @@ impl Parser {
                 message: "Invalid assignment target".to_string(),
                 line: equals.span.line,
                 col: equals.span.column,
-            });
-        } else if self.compare(TokenKind::COLON) {
-            let colon = self.advance_token()?;
-            let value = self.assignment()?;
-
-            if let Expr::Var(tok) = expr {
-                if let TokenKind::IDENT(key) = tok.kind {
-                    return Ok(Expr::Field {
-                        key,
-                        value: Box::new(value), 
-                        line: tok.span.line,
-                        col: tok.span.column, 
-                    });
-                }
-            } 
-
-            return Err(ParseError::InvalidStatement { 
-                message: "Invalid key".to_string(), 
-                line: colon.span.line,
-                col: colon.span.column,
             });
         }
 

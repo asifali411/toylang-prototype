@@ -43,12 +43,6 @@ pub enum Expr {
         elements: Vec<Box<Expr>>,
     },
     Hashmap {
-        fields: Vec<Box<Expr>>, // expect Expr::Field
+        fields: Vec<(String, Box<Expr>)>,
     },
-    Field {
-        key: String,
-        value: Box<Expr>,
-        line: usize,
-        col: usize,
-    }
 }
