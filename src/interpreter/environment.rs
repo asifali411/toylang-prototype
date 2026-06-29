@@ -77,7 +77,7 @@ impl Environment {
         }
 
         Err(InterpreterError::UndefinedVariable {
-            var: name.to_string(),
+            name: name.into(),
             line,
             col,
         })

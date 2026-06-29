@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{environment::Environment, signal::Signal, value::Value}, lexer::token::{Token, TokenKind}, parser::statement::Stmt,
+    errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{environment::Environment, signal::Signal, value::Value}, lexer::token::{Token, TokenKind}, native::types::{convert_to_string, extract_type}, parser::statement::Stmt,
 };
 
 type Env = Rc<RefCell<Environment>>;
@@ -52,7 +52,7 @@ impl Function {
                 TokenKind::IDENT(name) => env.borrow_mut().define_var(name, arg),
                 _ => {
                     return Err(InterpreterError::InvalidParameter {
-                        kind: format!("{:?}", param.kind.clone()),
+                        name: format!("<{}>({})", extract_type(&arg), convert_to_string(&arg)),
                     })
                 }
             };

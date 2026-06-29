@@ -17,8 +17,8 @@ pub fn to_num(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
         return Ok(Value::NUM(n));
       }
     },
-    other => {
-      return Err(InterpreterError::InvalidParameter { kind: format!("{:?}", other) });
+    _ => {
+      return Err(InterpreterError::InvalidParameter { name: format!("<{}>({})", extract_type(&args[0]), convert_to_string(&args[0]))})
     }
   }
 }

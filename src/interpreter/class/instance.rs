@@ -24,7 +24,7 @@ impl Instance {
       let bound = self.bind(method, this);
       return Ok(Value::FUNC(bound));
     }
-    Err(InterpreterError::UndefinedProperty { prop: name, line, col })
+    Err(InterpreterError::UndefinedProperty { name, line, col })
   }
 
   pub fn bind(&self, mut method: Function, this: Rc<RefCell<Instance>>) -> Function {

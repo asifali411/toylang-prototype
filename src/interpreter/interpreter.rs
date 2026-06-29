@@ -255,7 +255,7 @@ impl Interpreter {
             return Ok(Value::CLASS(class));
         }
     
-        Err(InterpreterError::UndefinedVariable { var: name.into(), line, col })
+        Err(InterpreterError::UndefinedVariable { name: name.into(), line, col })
     }
 
     fn eval_unary(&mut self, op: &Token, expr: &Expr) -> IResult<Value> {
@@ -357,7 +357,7 @@ impl Interpreter {
                 func(self, args)
             },
             _ => Err(InterpreterError::UndefinedFunction {
-                func: format!("{:?}", callee),
+                name: format!("{:?}", callee),
                 line: *line,
                 col: *col,
             }),
@@ -373,7 +373,7 @@ impl Interpreter {
             Value::CLASS(class) => {
                 let method = class.find_method(name)
                     .ok_or_else(|| InterpreterError::UndefinedProperty {
-                        prop: name.clone(),
+                        name: name.into(),
                         line: *line,
                         col: *col,
                     })?;

@@ -4,6 +4,7 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum InterpreterError {
+    // --- Operator / expression errors ---
     #[error("Unsupported unary operator '{op:?}'")]
     UnsupportedUnaryOp { op: TokenKind },
 
@@ -16,98 +17,126 @@ pub enum InterpreterError {
     #[error("Unexpected expression")]
     UnexpectedExpr,
 
-    #[error("Undefined variable '{var}'")]
-    UndefinedVariable {
-        var: String,
-        line: usize,
-        col: usize,
-    },
+    // --- Type errors ---
+    // #[error("Type mismatch at {line}:{col}: expected {expected}, got {got}")]
+    // TypeMismatch {
+    //     expected: &'static str,
+    //     got: &'static str,
+    //     line: usize,
+    //     col: usize,
+    // },
 
-    #[error("Undefined func '{func}' at {line}:{col}")]
-    UndefinedFunction {
-        func: String,
-        line: usize,
-        col: usize,
-    },
+    // #[error("Invalid operand type '{got}' for operator '{op:?}' at {line}:{col}")]
+    // InvalidOperandType {
+    //     op: TokenKind,
+    //     got: &'static str,
+    //     line: usize,
+    //     col: usize,
+    // },
 
-    #[error("Undefined property '{prop}' at {line}:{col}")]
-    UndefinedProperty {
-        prop: String,
-        line: usize,
-        col: usize,
-    },
+    // --- Resolution errors ---
+    #[error("Undefined variable '{name}' at {line}:{col}")]
+    UndefinedVariable { name: String, line: usize, col: usize },
 
-    #[error("Expected {expected} arguments but recieved {got} arguments")]
-    ArityMismatch {
-        expected: usize,
-        got: usize,
-    },
+    #[error("Undefined function '{name}' at {line}:{col}")]
+    UndefinedFunction { name: String, line: usize, col: usize },
 
-    #[error("Cannot divide by zero")]
+    #[error("Undefined property '{name}' at {line}:{col}")]
+    UndefinedProperty { name: String, line: usize, col: usize },
+
+    // --- Call errors ---
+    #[error("Arity mismatch: expected {expected} argument(s) but received {got}")]
+    ArityMismatch { expected: usize, got: usize },
+
+    #[error("Invalid parameter '{name}'")]
+    InvalidParameter { name: String },
+
+    // --- Arithmetic ---
+    #[error("Division by zero")]
     DivisionByZero,
 
-    #[error("Invalid parameter '{:?}'", kind)]
-    InvalidParameter { kind: String },
+    #[error("Arithmetic error: {message}")]
+    ArithmeticError { message: String },
 
-    #[error("Invalid statement {message}")]
+    // --- Control flow ---
+    #[error("Invalid statement: {message}")]
     InvalidStatement { message: String },
 
-    #[error("Arithmetic Error {message}")]
-    ArithmeticError { message: String },
+    // #[error("Stack overflow: max call depth exceeded")]
+    // StackOverflow,
 }
 
+// ── helpers ──────────────────────────────────────────────────────────────────
+
 impl InterpreterError {
+    fn location(&self) -> Option<(usize, usize)> {
+        match self {
+            Self::UndefinedVariable { line, col, .. }
+            | Self::UndefinedFunction { line, col, .. }
+            | Self::UndefinedProperty { line, col, .. }
+            // | Self::TypeMismatch { line, col, .. }
+            // | Self::InvalidOperandType { line, col, .. } 
+            => Some((*line, *col)),
+            _ => None,
+        }
+    }
+
+    fn detail(&self) -> String {
+        match self {
+            Self::UnsupportedUnaryOp { op } => {
+                format!("Unsupported unary operator '{}'", format!("{op:?}").yellow())
+            }
+            Self::UnsupportedBinaryOp { op } => {
+                format!("Unsupported binary operator '{}'", format!("{op:?}").yellow())
+            }
+            Self::UnexpectedLiteral { kind } => {
+                format!("Unexpected literal kind '{}'", format!("{kind:?}").yellow())
+            }
+            Self::UnexpectedExpr => "Unexpected expression".to_string(),
+            // Self::TypeMismatch { expected, got, .. } => format!(
+            //     "Type mismatch: expected '{}', got '{}'",
+            //     expected.yellow(),
+            //     got.yellow()
+            // ),
+            // Self::InvalidOperandType { op, got, .. } => format!(
+            //     "Invalid operand type '{}' for operator '{}'",
+            //     got.yellow(),
+            //     format!("{op:?}").yellow()
+            // ),
+            Self::UndefinedVariable { name, .. } => {
+                format!("Undefined variable '{}'", name.yellow())
+            }
+            Self::UndefinedFunction { name, .. } => {
+                format!("Undefined function '{}'", name.yellow())
+            }
+            Self::UndefinedProperty { name, .. } => {
+                format!("Undefined property '{}'", name.yellow())
+            }
+            Self::ArityMismatch { expected, got } => format!(
+                "Expected {} argument(s) but received {}",
+                expected.to_string().yellow(),
+                got.to_string().yellow()
+            ),
+            Self::InvalidParameter { name } => {
+                format!("Invalid parameter '{}'", name.yellow())
+            }
+            Self::DivisionByZero => "Division by zero".to_string(),
+            Self::ArithmeticError { message } => format!("Arithmetic error: {message}"),
+            Self::InvalidStatement { message } => format!("Invalid statement: {message}"),
+            // Self::StackOverflow => "Stack overflow: max call depth exceeded".to_string(),
+        }
+    }
+
     pub fn display(&self) {
         let prefix = "Runtime error".red().bold();
-        match self {
-            InterpreterError::UnsupportedUnaryOp { op } => {
-                eprintln!("{}: unsupported unary operator '{:?}'", prefix, op);
-            }
-            InterpreterError::UnsupportedBinaryOp { op } => {
-                eprintln!("{}: unsupported binary operator '{:?}'", prefix, op);
-            }
-            InterpreterError::UnexpectedLiteral { kind } => {
-                eprintln!("{}: unexpected literal kind '{:?}'", prefix, kind);
-            }
-            InterpreterError::UnexpectedExpr => {
-                eprintln!("{}: unexpected expression", prefix);
-            }
-            InterpreterError::UndefinedVariable { var, line, col } => {
-                let loc = format!(" at line: {}, col: {} ", line, col)
-                    .black()
-                    .on_green();
+        let detail = self.detail();
 
-                eprintln!("{}: Undefined variable '{}'\n{}\n", prefix, var, loc);
+        match self.location() {
+            Some((line, col)) => {
+                let loc = format!(" at line: {line}, col: {col} ").black().on_green();
+                eprintln!("{prefix}: {detail}\n{loc}\n");
             }
-            InterpreterError::UndefinedFunction { func, line, col } => {
-                let loc = format!(" at line: {}, col: {} ", line, col)
-                    .black()
-                    .on_green();
-
-                eprintln!("{}: Undefined function '{}'\n{}\n", prefix, func, loc);
-            }
-            InterpreterError::UndefinedProperty { prop, line, col } => {
-                let loc = format!(" at line: {}, col: {} ", line, col)
-                    .black()
-                    .on_green();
-
-                eprintln!("{}: Undefined property '{}'\n{}\n", prefix, prop, loc);
-            }
-            InterpreterError::ArityMismatch { expected, got } => {
-                eprintln!("Expected {expected} arguments but recieved {got} arguments");
-            },
-            InterpreterError::DivisionByZero => {
-                eprintln!("{}: Cannot divide by zero", prefix);
-            }
-            InterpreterError::InvalidParameter { kind} => {
-                eprintln!("Invalid parameter: '{:?}'", kind.yellow());
-            }
-            InterpreterError::InvalidStatement { message } => {
-                eprintln!("Invalid statement: {message}");
-            },
-            InterpreterError::ArithmeticError { message } => {
-                eprintln!("{prefix}: Arithmetic Error: {message}");
-            }
+            None => eprintln!("{prefix}: {detail}\n"),
         }
     }
 }

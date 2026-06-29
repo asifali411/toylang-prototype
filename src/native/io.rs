@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::{errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{Interpreter, value::Value}, native::types::convert_to_string};
+use crate::{errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{Interpreter, value::Value}, native::types::{convert_to_string, extract_type}};
 
 pub fn output(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
   for i in 0..(args.len() - 1) {
@@ -29,6 +29,6 @@ pub fn input(_interp: &mut Interpreter, args: Vec<Value>) -> IResult<Value> {
 
       Ok(Value::STRING(inp.trim().to_string()))
     },
-    _ => Err(InterpreterError::InvalidParameter { kind: format!("{:?}", args[0]) })
+    _ => Err(InterpreterError::InvalidParameter { name: format!("<{}>({})", extract_type(&args[0]), convert_to_string(&args[0]))})
   }
 }

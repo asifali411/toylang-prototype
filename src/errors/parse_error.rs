@@ -4,102 +4,75 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum ParseError {
     #[error("Unexpected token '{token}' at {line}:{col}")]
-    UnexpectedToken {
-        token: String,
-        line: usize,
-        col: usize,
-    },
+    UnexpectedToken { token: String, line: usize, col: usize },
 
     #[error("Unexpected end of input")]
     UnexpectedEof,
 
     #[error("{message} at {line}:{col}")]
-    ExpectedToken {
-        message: String,
-        line: usize,
-        col: usize,
-    },
+    ExpectedToken { message: String, line: usize, col: usize },
 
-    #[error("Expected variable name after var keyword at {line}:{col}")]
-    ExpectedVariableName { line: usize, col: usize },
+    /// Replaces ExpectedVariableName, ExpectedFunctionName, ExpectedClassName.
+    /// `keyword` is the keyword that was seen (e.g. "var", "func", "class").
+    #[error("Expected name after '{keyword}' keyword at {line}:{col}")]
+    ExpectedName { keyword: &'static str, line: usize, col: usize },
 
-    #[error("Expected function name after func keyword at {line}:{col}")]
-    ExpectedFunctionName { line: usize, col: usize },
+    #[error("Invalid statement: {message} at {line}:{col}")]
+    InvalidStatement { message: String, line: usize, col: usize },
 
-    #[error("Expected class name after class keyword at {line}:{col}")]
-    ExpectedClassName { line: usize, col: usize },
+    // --- new ---
+    #[error("Unterminated string literal at {line}:{col}")]
+    UnterminatedString { line: usize, col: usize },
 
-    #[error("Invalid statement, {message} at {line}:{col}")]
-    InvalidStatement {
-        message: String,
-        line: usize,
-        col: usize,
-    },
+    #[error("Maximum expression nesting depth exceeded at {line}:{col}")]
+    NestingDepthExceeded { line: usize, col: usize },
 }
 
+// ── helpers ───────────────────────────────────────────────────────────────────
+
 impl ParseError {
+    fn location(&self) -> Option<(usize, usize)> {
+        match self {
+            Self::UnexpectedToken { line, col, .. }
+            | Self::ExpectedToken { line, col, .. }
+            | Self::ExpectedName { line, col, .. }
+            | Self::InvalidStatement { line, col, .. }
+            | Self::UnterminatedString { line, col }
+            | Self::NestingDepthExceeded { line, col } => Some((*line, *col)),
+            Self::UnexpectedEof => None,
+        }
+    }
+
+    fn detail(&self) -> String {
+        match self {
+            Self::UnexpectedToken { token, .. } => {
+                format!("Unexpected token '{}'", token.yellow())
+            }
+            Self::UnexpectedEof => "Unexpected end of input".to_string(),
+            Self::ExpectedToken { message, .. } => message.clone(),
+            Self::ExpectedName { keyword, .. } => {
+                format!("Expected name after '{}' keyword", keyword.yellow())
+            }
+            Self::InvalidStatement { message, .. } => {
+                format!("Invalid statement: {message}")
+            }
+            Self::UnterminatedString { .. } => "Unterminated string literal".to_string(),
+            Self::NestingDepthExceeded { .. } => {
+                "Maximum expression nesting depth exceeded".to_string()
+            }
+        }
+    }
+
     pub fn display(&self) {
         let prefix = "Parse error".red().bold();
-        match self {
-            ParseError::UnexpectedToken { token, line, col } => {
-                let loc = format!(" at line: {}, col: {} ", line, col)
-                    .black()
-                    .on_green();
+        let detail = self.detail();
 
-                eprintln!(
-                    "{}: Unexpected token '{}'\n{}\n",
-                    prefix,
-                    token.yellow(),
-                    loc,
-                );
+        match self.location() {
+            Some((line, col)) => {
+                let loc = format!(" at line: {line}, col: {col} ").black().on_green();
+                eprintln!("{prefix}: {detail}\n{loc}\n");
             }
-            ParseError::UnexpectedEof => {
-                eprintln!("{}: unexpected end of input", prefix);
-            }
-            ParseError::ExpectedToken { message, line, col } => {
-                let loc = format!(" at line: {}, col: {} ", line, col)
-                    .black()
-                    .on_green();
-
-                eprintln!("{}: {}\n{}\n", prefix, message, loc);
-            }
-            ParseError::ExpectedVariableName { line, col } => {
-                let loc = format!(" at line: {}, col: {} ", line, col)
-                    .black()
-                    .on_green();
-
-                eprintln!(
-                    "{}: Expected variable name after var keyword \n{}\n",
-                    prefix, loc
-                );
-            }
-            ParseError::ExpectedFunctionName { line, col } => {
-                let loc = format!(" at line: {}, col: {} ", line, col)
-                    .black()
-                    .on_green();
-
-                eprintln!(
-                    "{}: Expected function name after func keyword \n{}\n",
-                    prefix, loc
-                );
-            }
-            ParseError::ExpectedClassName { line, col } => {
-                let loc = format!(" at line: {}, col: {} ", line, col)
-                    .black()
-                    .on_green();
-
-                eprintln!(
-                    "{}: Expected class name after class keyword \n{}\n",
-                    prefix, loc
-                );
-            }
-            ParseError::InvalidStatement { message, line, col } => {
-                let loc = format!(" at line: {}, col: {} ", line, col)
-                    .black()
-                    .on_green();
-
-                eprintln!("{}:\n{}\n{}", prefix, message, loc);
-            }
+            None => eprintln!("{prefix}: {detail}\n"),
         }
     }
 }

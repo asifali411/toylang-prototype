@@ -54,7 +54,8 @@ impl Parser {
             Some(tok) => match &tok.kind {
                 TokenKind::IDENT(v) => v.clone(),
                 _ => {
-                    return Err(ParseError::ExpectedVariableName {
+                    return Err(ParseError::ExpectedName {
+                        keyword: "var",
                         line: tok.span.line,
                         col: tok.span.column,
                     });
@@ -82,7 +83,8 @@ impl Parser {
             Some(tok) => match &tok.kind {
                 TokenKind::IDENT(v) => v.clone(),
                 _ => {
-                    return Err(ParseError::ExpectedFunctionName {
+                    return Err(ParseError::ExpectedName {
+                        keyword: "func",
                         line: tok.span.line,
                         col: tok.span.column,
                     });
@@ -131,7 +133,8 @@ impl Parser {
             Some(tok) => match &tok.kind {
                 TokenKind::IDENT(v) => v.clone(),
                 _ => {
-                    return Err(ParseError::ExpectedClassName {
+                    return Err(ParseError::ExpectedName {
+                        keyword: "class",
                         line: tok.span.line,
                         col: tok.span.column,
                     });
