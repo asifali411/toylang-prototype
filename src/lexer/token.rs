@@ -46,6 +46,8 @@ pub enum TokenKind {
     MINUS,
     STAR,
     SLASH,
+    INC,
+    DEC,
 
     EQUAL,
     NOT,

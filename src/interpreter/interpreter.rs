@@ -88,19 +88,7 @@ impl Interpreter {
             Expr::Unary { operator, right } => self.eval_unary(operator, right),
             Expr::Binary { left, operator, right } => self.eval_binary(left, operator, right),
             Expr::Group { expr } => self.eval_expression(expr),
-            Expr::Assign { name, value, line, col } => {
-                let value = self.eval_expression(value)?;
-                if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
-                    self.environment
-                        .borrow_mut()
-                        .assign_at(depth, name, value.clone());
-                } else {
-                    self.environment
-                        .borrow_mut()
-                        .assign_var(name, value.clone(), *line, *col)?;
-                }
-                Ok(value)
-            }
+            Expr::Assign { name, value, line, col } => self.eval_assign(expr, name, value, line, col),
             Expr::Call { callee, arguments, line, col } => self.eval_call(callee, arguments, line, col),
             Expr::Get { object, name, line, col } => self.eval_get(object, name, line, col),
             Expr::Set { object, name, value } => self.eval_set(object, name, value),
@@ -274,6 +262,26 @@ impl Interpreter {
         match op.kind {
             TokenKind::MINUS => Ok((-value)?),
             TokenKind::NOT => Ok((!value)?),
+            TokenKind::INC => {
+                let new_val = match value {
+                    Value::NUM(n) => Value::NUM(n + 1.0),
+                    _ => return Err(InterpreterError::InvalidStatement {
+                        message: "Increment operator requires a number".into(),
+                    }),
+                };
+                self.assign_back(expr, new_val.clone())?;
+                Ok(new_val)
+            },
+            TokenKind::DEC => {
+                let new_val = match value {
+                    Value::NUM(n) => Value::NUM(n - 1.0),
+                    _ => return Err(InterpreterError::InvalidStatement {
+                        message: "Decrement operator requires a number".into(),
+                    }),
+                };
+                self.assign_back(expr, new_val.clone())?;
+                Ok(new_val)
+            },
             ref kind => Err(InterpreterError::UnsupportedUnaryOp { op: kind.clone() }),
         }
     }
@@ -469,6 +477,42 @@ impl Interpreter {
     
         self.environment.borrow_mut().assign_var(&var_name, Value::ARRAY(arr), line, col)?;
         Ok(Value::NULL)
+    }
+
+    fn eval_assign(&mut self, expr: &Expr, name: &String, value: &Box<Expr>, line: &usize, col: &usize) -> IResult<Value> {
+        let value = self.eval_expression(value)?;
+        if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
+            self.environment
+                .borrow_mut()
+                .assign_at(depth, name, value.clone());
+        } else {
+            self.environment
+                .borrow_mut()
+                .assign_var(name, value.clone(), *line, *col)?;
+        }
+        Ok(value)
+    }
+
+    fn assign_back(&mut self, expr: &Expr, value: Value) -> IResult<()> {
+        let (name, line, col) = match expr {
+            Expr::Var(tok) => match &tok.kind {
+                TokenKind::IDENT(name) => (name.clone(), tok.span.line, tok.span.column),
+                _ => return Err(InterpreterError::InvalidStatement {
+                    message: "Increment/decrement target must be a variable".into(),
+                }),
+            },
+            _ => return Err(InterpreterError::InvalidStatement {
+                message: "Increment/decrement target must be a variable".into(),
+            }),
+        };
+    
+        if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
+            self.environment.borrow_mut().assign_at(depth, &name, value);
+        } else {
+            self.environment.borrow_mut().assign_var(&name, value, line, col)?;
+        }
+    
+        Ok(())
     }
 
 }

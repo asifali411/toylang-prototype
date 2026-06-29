@@ -458,7 +458,8 @@ impl Parser {
 
     fn unary(&mut self) -> PResult<Expr> {
         if let Some(tok) = self.peek() {
-            if tok.kind == TokenKind::MINUS || tok.kind == TokenKind::NOT {
+            if tok.kind == TokenKind::MINUS || tok.kind == TokenKind::NOT ||
+            tok.kind == TokenKind::INC || tok.kind == TokenKind::DEC {
                 let op = self.advance_token()?;
                 return Ok(Expr::Unary {
                     operator: op,

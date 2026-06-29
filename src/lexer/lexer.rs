@@ -49,8 +49,14 @@ impl Lexer {
             ',' => self.add_token(TokenKind::COMMA),
             '.' => self.add_token(TokenKind::DOT),
 
-            '+' => self.add_token(TokenKind::PLUS),
-            '-' => self.add_token(TokenKind::MINUS),
+            '+' => {
+                let kind = if self.match_next('+') { TokenKind::INC } else { TokenKind::PLUS };
+                self.add_token(kind);
+            },
+            '-' => {
+                let kind = if self.match_next('-') { TokenKind::DEC } else { TokenKind::MINUS };
+                self.add_token(kind);
+            },
             '*' => self.add_token(TokenKind::STAR),
 
             '/' => {
