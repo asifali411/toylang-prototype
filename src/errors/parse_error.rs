@@ -4,19 +4,35 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum ParseError {
     #[error("Unexpected token '{token}' at {line}:{col}")]
-    UnexpectedToken { token: String, line: usize, col: usize },
+    UnexpectedToken {
+        token: String,
+        line: usize,
+        col: usize,
+    },
 
     #[error("Unexpected end of input")]
     UnexpectedEof,
 
     #[error("{message} at {line}:{col}")]
-    ExpectedToken { message: String, line: usize, col: usize },
+    ExpectedToken {
+        message: String,
+        line: usize,
+        col: usize,
+    },
 
     #[error("Expected name after '{keyword}' keyword at {line}:{col}")]
-    ExpectedName { keyword: &'static str, line: usize, col: usize },
+    ExpectedName {
+        keyword: &'static str,
+        line: usize,
+        col: usize,
+    },
 
     #[error("Invalid statement: {message} at {line}:{col}")]
-    InvalidStatement { message: String, line: usize, col: usize },
+    InvalidStatement {
+        message: String,
+        line: usize,
+        col: usize,
+    },
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -61,3 +77,4 @@ impl ParseError {
         }
     }
 }
+

@@ -144,14 +144,14 @@ impl Parser {
         };
         self.advance();
         let superclass = match self.peek() {
-            Some(tok) => {
-                match tok.kind {
-                    TokenKind::INHERIT => {
-                        self.advance();
-                        Some(Expr::Var(self.consume_ident("Expect superclass name after 'inherit' keyword")?))
-                    },
-                    _ => None,
+            Some(tok) => match tok.kind {
+                TokenKind::INHERIT => {
+                    self.advance();
+                    Some(Expr::Var(self.consume_ident(
+                        "Expect superclass name after 'inherit' keyword",
+                    )?))
                 }
+                _ => None,
             },
             None => return Err(UnexpectedEof),
         };
@@ -165,9 +165,12 @@ impl Parser {
         }
 
         self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after class body")?;
-        
-        Ok(Stmt::Class { name, methods, superclass })
 
+        Ok(Stmt::Class {
+            name,
+            methods,
+            superclass,
+        })
     }
 
     // ---------------------------------------------------------------
@@ -303,7 +306,7 @@ impl Parser {
 
     fn create_hashmap(&mut self) -> PResult<Expr> {
         let mut fields: Vec<(String, Box<Expr>)> = Vec::new();
-    
+
         if !self.compare(TokenKind::CLOSE_BRACE) {
             loop {
                 let key_tok = self.consume_ident("Expect key name in hashmap")?;
@@ -311,23 +314,25 @@ impl Parser {
                     TokenKind::IDENT(name) => name,
                     _ => unreachable!(),
                 };
-    
+
                 self.consume(TokenKind::COLON, "Expect ':' after hashmap key")?;
-    
+
                 let value = self.expression()?;
                 fields.push((key, Box::new(value)));
 
                 if self.compare(TokenKind::COMMA) {
                     self.advance();
-                    if self.compare(TokenKind::CLOSE_BRACE) { break; } // trailing comma
+                    if self.compare(TokenKind::CLOSE_BRACE) {
+                        break;
+                    } // trailing comma
                 } else {
                     break;
                 }
             }
         }
-    
+
         self.consume(TokenKind::CLOSE_BRACE, "Expect '}' after hashmap body")?;
-    
+
         Ok(Expr::Hashmap { fields })
     }
 
@@ -355,14 +360,20 @@ impl Parser {
                         col: tok.span.column,
                     });
                 }
-            } else if let Expr::Get { 
-                object, 
-                name, 
-                ..
-            } = expr {
-                return Ok(Expr::Set { object, name, value: Box::new(value) })
+            } else if let Expr::Get { object, name, .. } = expr {
+                return Ok(Expr::Set {
+                    object,
+                    name,
+                    value: Box::new(value),
+                });
             } else if let Expr::Index { object, index } = expr {
-                return Ok(Expr::IndexSet { object, index, value: Box::new(value), line: equals.span.line, col: equals.span.column });
+                return Ok(Expr::IndexSet {
+                    object,
+                    index,
+                    value: Box::new(value),
+                    line: equals.span.line,
+                    col: equals.span.column,
+                });
             }
 
             return Err(ParseError::InvalidStatement {
@@ -370,17 +381,20 @@ impl Parser {
                 line: equals.span.line,
                 col: equals.span.column,
             });
-        } 
-        
-        if self.compare(TokenKind::PLUS_EQ) || self.compare(TokenKind::MINUS_EQ)
-        || self.compare(TokenKind::STAR_EQ) || self.compare(TokenKind::SLASH_EQ) {
+        }
+
+        if self.compare(TokenKind::PLUS_EQ)
+            || self.compare(TokenKind::MINUS_EQ)
+            || self.compare(TokenKind::STAR_EQ)
+            || self.compare(TokenKind::SLASH_EQ)
+        {
             let op = self.advance_token()?;
             let value = self.assignment()?;
 
             if let Expr::Var(ref tok) = expr {
                 if let TokenKind::IDENT(name) = &tok.kind {
                     return Ok(Expr::CompoundAssign {
-                        name: name.to_string(), 
+                        name: name.to_string(),
                         value: Box::new(value),
                         op,
                     });
@@ -477,8 +491,11 @@ impl Parser {
 
     fn unary(&mut self) -> PResult<Expr> {
         if let Some(tok) = self.peek() {
-            if tok.kind == TokenKind::MINUS || tok.kind == TokenKind::NOT ||
-            tok.kind == TokenKind::INC || tok.kind == TokenKind::DEC {
+            if tok.kind == TokenKind::MINUS
+                || tok.kind == TokenKind::NOT
+                || tok.kind == TokenKind::INC
+                || tok.kind == TokenKind::DEC
+            {
                 let op = self.advance_token()?;
                 return Ok(Expr::Unary {
                     operator: op,
@@ -491,10 +508,12 @@ impl Parser {
 
     fn call(&mut self) -> PResult<Expr> {
         let mut expr = self.primary()?;
-    
+
         loop {
             let tok = self.peek();
-            if tok == None { break; }
+            if tok == None {
+                break;
+            }
             let tok = tok.unwrap().clone();
             match &tok.kind {
                 TokenKind::OPEN_PAREN => {
@@ -504,15 +523,15 @@ impl Parser {
                     } else {
                         return Err(ParseError::UnexpectedEof);
                     }
-                },
+                }
                 TokenKind::DOT => {
                     self.advance();
                     let tok = self.consume_ident("Expect property name after '.'")?;
-        
+
                     if let TokenKind::IDENT(name) = tok.kind {
                         let line = tok.span.line;
                         let col = tok.span.column;
-        
+
                         expr = Expr::Get {
                             object: Box::new(expr),
                             name,
@@ -520,13 +539,16 @@ impl Parser {
                             col,
                         };
                     }
-                },
+                }
                 TokenKind::OPEN_BRACK => {
                     self.advance();
                     let index = self.expression()?;
                     self.consume(TokenKind::CLOSE_BRACK, "Expect ']' after array indexing")?;
-                    expr = Expr::Index { object: Box::new(expr), index: Box::new(index) }
-                },
+                    expr = Expr::Index {
+                        object: Box::new(expr),
+                        index: Box::new(index),
+                    }
+                }
                 TokenKind::INC | TokenKind::DEC => {
                     let op = self.advance_token()?;
                     expr = Expr::PostUnary {
@@ -537,17 +559,16 @@ impl Parser {
                 _ => break,
             }
         }
-    
+
         Ok(expr)
     }
 
     fn primary(&mut self) -> PResult<Expr> {
         match self.advance() {
             Some(tok) => match &tok.kind {
-                TokenKind::NUM(_)
-                | TokenKind::TRUE
-                | TokenKind::FALSE
-                | TokenKind::STRING(_) => Ok(Expr::Literal(tok.clone())),
+                TokenKind::NUM(_) | TokenKind::TRUE | TokenKind::FALSE | TokenKind::STRING(_) => {
+                    Ok(Expr::Literal(tok.clone()))
+                }
                 TokenKind::OPEN_PAREN => {
                     let expr = self.expression()?;
                     self.consume(TokenKind::CLOSE_PAREN, "Expect ')' after expression")?;
@@ -634,3 +655,4 @@ impl Parser {
         matches!(self.peek(), Some(tok) if tok.kind == token_kind)
     }
 }
+

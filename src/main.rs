@@ -2,7 +2,6 @@ use std::{fs, process::ExitCode};
 use toylang;
 
 fn main() -> ExitCode {
-    
     let path = std::env::args().nth(1);
 
     if path.is_none() {
@@ -13,10 +12,10 @@ fn main() -> ExitCode {
     let content = fs::read_to_string(path.unwrap());
 
     match content {
-       Ok(source) => toylang::run(source),
-       Err(err) => {
-           eprintln!("{}", err);
-           ExitCode::FAILURE
-       },
+        Ok(source) => toylang::run(source),
+        Err(err) => {
+            eprintln!("{}", err);
+            ExitCode::FAILURE
+        }
     }
 }

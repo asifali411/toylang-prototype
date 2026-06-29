@@ -1,4 +1,7 @@
-use crate::{errors::interpreter_error::InterpreterError, interpreter::{class::class::Class, function::Function, value::Value}};
+use crate::{
+    errors::interpreter_error::InterpreterError,
+    interpreter::{class::class::Class, function::Function, value::Value},
+};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub type Env = Rc<RefCell<Environment>>;
@@ -42,9 +45,7 @@ impl Environment {
             .and_then(|e| e.borrow().get_at(depth - 1, name))
     }
 
-    pub fn assign_at(
-        &mut self, depth: usize, name: &str, value: Value,
-    ) -> Option<()> {
+    pub fn assign_at(&mut self, depth: usize, name: &str, value: Value) -> Option<()> {
         if depth == 0 {
             self.variables.insert(name.to_string(), value);
             return Some(());
@@ -94,7 +95,7 @@ impl Environment {
     }
 
     //--------------------------------------------------------------------------
-    
+
     pub fn define_func(&mut self, name: impl Into<String>, func: Function) {
         let name = name.into();
         self.functions.insert(name.clone(), func.clone());
@@ -128,5 +129,4 @@ impl Environment {
             .as_ref()
             .and_then(|env: &Rc<RefCell<Environment>>| env.borrow().get_class(name))
     }
-    
 }

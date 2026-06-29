@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::ops::{Add, Div, Mul, Neg, Sub, Not};
+use std::ops::{Add, Div, Mul, Neg, Not, Sub};
 use std::rc::Rc;
 
 use crate::errors::interpreter_error::InterpreterError;
@@ -28,10 +28,7 @@ pub enum Value {
     ARRAY(Vec<Box<Value>>),
     HASHMAP(HashMap<String, Box<Value>>),
 
-    NativeFunction {
-        name: String,
-        func: NativeFn,
-    },
+    NativeFunction { name: String, func: NativeFn },
 
     NULL,
 }
@@ -44,7 +41,9 @@ impl PartialEq for Value {
             (Value::TRUE, Value::TRUE) => true,
             (Value::FALSE, Value::FALSE) => true,
             (Value::NULL, Value::NULL) => true,
-            (Value::NativeFunction { name: n1, .. }, Value::NativeFunction { name: n2, .. }) => n1 == n2,
+            (Value::NativeFunction { name: n1, .. }, Value::NativeFunction { name: n2, .. }) => {
+                n1 == n2
+            }
             (Value::FUNC(_), Value::FUNC(_)) => false,
             (Value::CLASS(_), Value::CLASS(_)) => false,
             (Value::OBJECT(a), Value::OBJECT(b)) => Rc::ptr_eq(a, b),
@@ -120,8 +119,11 @@ impl Add for Value {
                 let a = convert_to_string(&a);
                 let b = convert_to_string(&b);
 
-                let message = format!("Cannot add <{}>({}) and <{}>({}) together", a_type, a, b_type, b);
-                return Err(InterpreterError::ArithmeticError { message })
+                let message = format!(
+                    "Cannot add <{}>({}) and <{}>({}) together",
+                    a_type, a, b_type, b
+                );
+                return Err(InterpreterError::ArithmeticError { message });
             }
         };
         Ok(res)
@@ -140,8 +142,11 @@ impl Sub for Value {
                 let a = convert_to_string(&a);
                 let b = convert_to_string(&b);
 
-                let message = format!("Cannot substract <{}>({}) and <{}>({}) together", a_type, a, b_type, b);
-                return Err(InterpreterError::ArithmeticError { message })
+                let message = format!(
+                    "Cannot substract <{}>({}) and <{}>({}) together",
+                    a_type, a, b_type, b
+                );
+                return Err(InterpreterError::ArithmeticError { message });
             }
         };
         Ok(res)
@@ -160,8 +165,11 @@ impl Mul for Value {
                 let a = convert_to_string(&a);
                 let b = convert_to_string(&b);
 
-                let message = format!("Cannot multiply <{}>({}) and <{}>({}) together", a_type, a, b_type, b);
-                return Err(InterpreterError::ArithmeticError { message })
+                let message = format!(
+                    "Cannot multiply <{}>({}) and <{}>({}) together",
+                    a_type, a, b_type, b
+                );
+                return Err(InterpreterError::ArithmeticError { message });
             }
         };
         Ok(res)
@@ -180,8 +188,11 @@ impl Div for Value {
                 let a = convert_to_string(&a);
                 let b = convert_to_string(&b);
 
-                let message = format!("Cannot divide <{}>({}) and <{}>({}) together", a_type, a, b_type, b);
-                return Err(InterpreterError::ArithmeticError { message })
+                let message = format!(
+                    "Cannot divide <{}>({}) and <{}>({}) together",
+                    a_type, a, b_type, b
+                );
+                return Err(InterpreterError::ArithmeticError { message });
             }
         };
         Ok(res)
@@ -199,7 +210,7 @@ impl Neg for Value {
                 let other = convert_to_string(&other);
 
                 let message = format!("Cannot negate <{}>({})", other_type, other);
-                return Err(InterpreterError::ArithmeticError { message })
+                return Err(InterpreterError::ArithmeticError { message });
             }
         };
         Ok(res)
@@ -218,7 +229,7 @@ impl Not for Value {
                 let other = convert_to_string(&other);
 
                 let message = format!("Cannot negate <{}>({})", other_type, other);
-                return Err(InterpreterError::ArithmeticError { message })
+                return Err(InterpreterError::ArithmeticError { message });
             }
         };
         Ok(res)

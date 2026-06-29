@@ -36,13 +36,25 @@ pub enum InterpreterError {
 
     // --- Resolution errors ---
     #[error("Undefined variable '{name}' at {line}:{col}")]
-    UndefinedVariable { name: String, line: usize, col: usize },
+    UndefinedVariable {
+        name: String,
+        line: usize,
+        col: usize,
+    },
 
     #[error("Undefined function '{name}' at {line}:{col}")]
-    UndefinedFunction { name: String, line: usize, col: usize },
+    UndefinedFunction {
+        name: String,
+        line: usize,
+        col: usize,
+    },
 
     #[error("Undefined property '{name}' at {line}:{col}")]
-    UndefinedProperty { name: String, line: usize, col: usize },
+    UndefinedProperty {
+        name: String,
+        line: usize,
+        col: usize,
+    },
 
     // --- Call errors ---
     #[error("Arity mismatch: expected {expected} argument(s) but received {got}")]
@@ -61,7 +73,6 @@ pub enum InterpreterError {
     // --- Control flow ---
     #[error("Invalid statement: {message}")]
     InvalidStatement { message: String },
-
     // #[error("Stack overflow: max call depth exceeded")]
     // StackOverflow,
 }
@@ -84,10 +95,16 @@ impl InterpreterError {
     fn detail(&self) -> String {
         match self {
             Self::UnsupportedUnaryOp { op } => {
-                format!("Unsupported unary operator '{}'", format!("{op:?}").yellow())
+                format!(
+                    "Unsupported unary operator '{}'",
+                    format!("{op:?}").yellow()
+                )
             }
             Self::UnsupportedBinaryOp { op } => {
-                format!("Unsupported binary operator '{}'", format!("{op:?}").yellow())
+                format!(
+                    "Unsupported binary operator '{}'",
+                    format!("{op:?}").yellow()
+                )
             }
             Self::UnexpectedLiteral { kind } => {
                 format!("Unexpected literal kind '{}'", format!("{kind:?}").yellow())
@@ -140,3 +157,4 @@ impl InterpreterError {
         }
     }
 }
+

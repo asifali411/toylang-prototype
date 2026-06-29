@@ -3,15 +3,25 @@ use std::{cell::RefCell, collections::HashMap, process::ExitCode, rc::Rc};
 mod errors;
 mod interpreter;
 mod lexer;
-mod parser;
 mod native;
+mod parser;
 
+use errors::lang_error::LangError;
 use interpreter::Interpreter;
 use lexer::Lexer;
 use parser::Parser;
-use errors::lang_error::LangError;
 
-use crate::{interpreter::{environment::Environment, resolver::Resolver, value::{NativeFn, Value}}, native::{io::{input, output}, types::{to_bool, to_num, to_string, type_of}}};
+use crate::{
+    interpreter::{
+        environment::Environment,
+        resolver::Resolver,
+        value::{NativeFn, Value},
+    },
+    native::{
+        io::{input, output},
+        types::{to_bool, to_num, to_string, type_of},
+    },
+};
 type Env = Rc<RefCell<Environment>>;
 
 pub fn run(source: String) -> ExitCode {
@@ -47,7 +57,6 @@ fn try_run(source: String) -> Result<(), LangError> {
 }
 
 fn define_natives(env: &Env) {
-
     let mut native_functions: HashMap<String, NativeFn> = HashMap::new();
 
     native_functions.insert(String::from("output"), output);
@@ -58,9 +67,8 @@ fn define_natives(env: &Env) {
     native_functions.insert(String::from("type"), type_of);
 
     for (name, func) in native_functions {
-        env.borrow_mut().define_var(name.clone(), Value::NativeFunction {
-            name,
-            func,
-        });
+        env.borrow_mut()
+            .define_var(name.clone(), Value::NativeFunction { name, func });
     }
 }
+

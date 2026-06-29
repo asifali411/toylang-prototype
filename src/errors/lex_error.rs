@@ -7,13 +7,21 @@ pub enum LexError {
     UndefinedCharacter { char: char, line: usize, col: usize },
 
     #[error("Invalid number '{lexeme}' at line {line}, col {col}")]
-    InvalidNumber { lexeme: String, line: usize, col: usize },
+    InvalidNumber {
+        lexeme: String,
+        line: usize,
+        col: usize,
+    },
 
     #[error("Invalid escape character '\\{char}' at line {line}, col {col}")]
     InvalidEscapeCharacter { char: char, line: usize, col: usize },
 
     #[error("{message} at line {line}, col {col}")]
-    ExpectedCharacter { message: String, line: usize, col: usize },
+    ExpectedCharacter {
+        message: String,
+        line: usize,
+        col: usize,
+    },
 }
 
 impl LexError {
@@ -50,3 +58,4 @@ impl LexError {
         eprintln!("{prefix}: {detail}\n{loc}\n");
     }
 }
+

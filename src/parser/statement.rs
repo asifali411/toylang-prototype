@@ -11,7 +11,7 @@ pub enum Stmt {
     Block(Vec<Box<Stmt>>),
     If {
         condition: Expr,
-        if_body: Box<Stmt>, // expect Block
+        if_body: Box<Stmt>,           // expect Block
         else_body: Option<Box<Stmt>>, // expect Block
     },
     Loop {
@@ -32,5 +32,5 @@ pub enum Stmt {
         name: String,
         methods: Vec<Stmt>,
         superclass: Option<Expr>, // expect Var
-    }
+    },
 }

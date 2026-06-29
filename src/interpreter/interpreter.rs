@@ -1,8 +1,10 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    errors::lang_error::IResult, interpreter::{environment::Environment, function::Function, signal::Signal, value::Value,
-    }, lexer::token::Token, parser::{expression::Expr, statement::Stmt},
+    errors::lang_error::IResult,
+    interpreter::{environment::Environment, function::Function, signal::Signal, value::Value},
+    lexer::token::Token,
+    parser::{expression::Expr, statement::Stmt},
 };
 
 pub type Env = Rc<RefCell<Environment>>;
@@ -32,11 +34,7 @@ impl Interpreter {
         }
     }
 
-    pub fn eval_var_statement(
-        &mut self,
-        name: &String,
-        expr: &Option<Expr>,
-    ) -> IResult<Value> {
+    pub fn eval_var_statement(&mut self, name: &String, expr: &Option<Expr>) -> IResult<Value> {
         let value = match expr {
             Some(e) => self.eval_expression(e)?,
             None => Value::NULL,
@@ -51,8 +49,15 @@ impl Interpreter {
         parameters: &Vec<Token>,
         body: &Rc<Stmt>,
     ) -> IResult<Value> {
-        let func = Function::new(name.to_string(), parameters.to_vec(), body.clone(), &self.environment, false);
+        let func = Function::new(
+            name.to_string(),
+            parameters.to_vec(),
+            body.clone(),
+            &self.environment,
+            false,
+        );
         self.environment.borrow_mut().define_func(name, func);
         Ok(Value::NULL)
     }
 }
+

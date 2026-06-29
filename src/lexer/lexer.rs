@@ -50,25 +50,33 @@ impl Lexer {
             '.' => self.add_token(TokenKind::DOT),
 
             '+' => {
-                let kind = if self.match_next('+') { 
-                    TokenKind::INC 
+                let kind = if self.match_next('+') {
+                    TokenKind::INC
                 } else if self.match_next('=') {
                     TokenKind::PLUS_EQ
-                } else { TokenKind::PLUS };
+                } else {
+                    TokenKind::PLUS
+                };
                 self.add_token(kind);
-            },
+            }
             '-' => {
-                let kind = if self.match_next('-') { 
-                    TokenKind::DEC 
+                let kind = if self.match_next('-') {
+                    TokenKind::DEC
                 } else if self.match_next('=') {
                     TokenKind::MINUS_EQ
-                }else { TokenKind::MINUS };
+                } else {
+                    TokenKind::MINUS
+                };
                 self.add_token(kind);
-            },
+            }
             '*' => {
-                let kind  = if self.match_next('=') { TokenKind::STAR_EQ } else { TokenKind::STAR };
+                let kind = if self.match_next('=') {
+                    TokenKind::STAR_EQ
+                } else {
+                    TokenKind::STAR
+                };
                 self.add_token(kind);
-            },
+            }
 
             '/' => {
                 if self.match_next('/') {
@@ -92,19 +100,35 @@ impl Lexer {
             '"' | '\'' => self.scan_string(c)?,
 
             '!' => {
-                let kind = if self.match_next('=') { TokenKind::NOT_EQ } else { TokenKind::NOT };
+                let kind = if self.match_next('=') {
+                    TokenKind::NOT_EQ
+                } else {
+                    TokenKind::NOT
+                };
                 self.add_token(kind);
             }
             '=' => {
-                let kind = if self.match_next('=') { TokenKind::EQ_EQ } else { TokenKind::EQUAL };
+                let kind = if self.match_next('=') {
+                    TokenKind::EQ_EQ
+                } else {
+                    TokenKind::EQUAL
+                };
                 self.add_token(kind);
             }
             '>' => {
-                let kind = if self.match_next('=') { TokenKind::GREAT_EQ } else { TokenKind::GREAT };
+                let kind = if self.match_next('=') {
+                    TokenKind::GREAT_EQ
+                } else {
+                    TokenKind::GREAT
+                };
                 self.add_token(kind);
             }
             '<' => {
-                let kind = if self.match_next('=') { TokenKind::LESS_EQ } else { TokenKind::LESS };
+                let kind = if self.match_next('=') {
+                    TokenKind::LESS_EQ
+                } else {
+                    TokenKind::LESS
+                };
                 self.add_token(kind);
             }
 
@@ -134,9 +158,14 @@ impl Lexer {
         }
 
         let lexeme: String = self.source[self.start..self.current].iter().collect();
-        lexeme.parse::<f64>().map(|n| self.add_token(TokenKind::NUM(n))).map_err(|_| {
-            LexError::InvalidNumber { lexeme, line: self.line, col: self.column }
-        })
+        lexeme
+            .parse::<f64>()
+            .map(|n| self.add_token(TokenKind::NUM(n)))
+            .map_err(|_| LexError::InvalidNumber {
+                lexeme,
+                line: self.line,
+                col: self.column,
+            })
     }
 
     fn scan_identifier(&mut self) {
@@ -156,7 +185,7 @@ impl Lexer {
             match self.peek() {
                 '\\' => {
                     self.advance();
-        
+
                     let escaped = match self.peek() {
                         'n' => '\n',
                         't' => '\t',
@@ -164,18 +193,21 @@ impl Lexer {
                         '"' => '"',
                         '\'' => '\'',
                         '\\' => '\\',
-                        other => return Err(LexError::InvalidEscapeCharacter { 
-                            char: other, 
-                            line: self.line, 
-                            col: self.column }),
+                        other => {
+                            return Err(LexError::InvalidEscapeCharacter {
+                                char: other,
+                                line: self.line,
+                                col: self.column,
+                            });
+                        }
                     };
-        
+
                     value.push(escaped);
                     self.advance();
                 }
-        
+
                 c if c == quote => break,
-        
+
                 c => {
                     value.push(c);
                     self.advance();
@@ -200,17 +232,17 @@ impl Lexer {
 
     fn keyword(s: &str) -> Option<TokenKind> {
         match s {
-            "var"    => Some(TokenKind::VAR),
-            "true"   => Some(TokenKind::TRUE),
-            "false"  => Some(TokenKind::FALSE),
-            "if"     => Some(TokenKind::IF),
-            "else"   => Some(TokenKind::ELSE),
-            "loop"   => Some(TokenKind::LOOP),
-            "func"   => Some(TokenKind::FUNC),
+            "var" => Some(TokenKind::VAR),
+            "true" => Some(TokenKind::TRUE),
+            "false" => Some(TokenKind::FALSE),
+            "if" => Some(TokenKind::IF),
+            "else" => Some(TokenKind::ELSE),
+            "loop" => Some(TokenKind::LOOP),
+            "func" => Some(TokenKind::FUNC),
             "return" => Some(TokenKind::RETURN),
             "class" => Some(TokenKind::CLASS),
             "inherit" => Some(TokenKind::INHERIT),
-            _        => None,
+            _ => None,
         }
     }
 
@@ -235,17 +267,29 @@ impl Lexer {
     }
 
     fn peek(&self) -> char {
-        if self.is_at_end() { '\0' } else { self.source[self.current] }
+        if self.is_at_end() {
+            '\0'
+        } else {
+            self.source[self.current]
+        }
     }
 
     fn peek_next(&self) -> char {
-        if self.current + 1 >= self.source.len() { '\0' } else { self.source[self.current + 1] }
+        if self.current + 1 >= self.source.len() {
+            '\0'
+        } else {
+            self.source[self.current + 1]
+        }
     }
 
     fn add_token(&mut self, kind: TokenKind) {
         self.tokens.push(Token {
             kind,
-            span: Span { line: self.line, column: self.column },
+            span: Span {
+                line: self.line,
+                column: self.column,
+            },
         });
     }
 }
+

@@ -1,7 +1,11 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    errors::{interpreter_error::InterpreterError, lang_error::IResult}, interpreter::{environment::Environment, signal::Signal, value::Value}, lexer::token::{Token, TokenKind}, native::types::{convert_to_string, extract_type}, parser::statement::Stmt,
+    errors::{interpreter_error::InterpreterError, lang_error::IResult},
+    interpreter::{environment::Environment, signal::Signal, value::Value},
+    lexer::token::{Token, TokenKind},
+    native::types::{convert_to_string, extract_type},
+    parser::statement::Stmt,
 };
 
 type Env = Rc<RefCell<Environment>>;
@@ -16,7 +20,13 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn new(name: String, parameters: Vec<Token>, body: Rc<Stmt>, environment: &Env, is_init: bool) -> Self {
+    pub fn new(
+        name: String,
+        parameters: Vec<Token>,
+        body: Rc<Stmt>,
+        environment: &Env,
+        is_init: bool,
+    ) -> Self {
         if let Stmt::Block(_) = body.as_ref() {
         } else {
             panic!("Function body must be a Block statement");
@@ -53,7 +63,7 @@ impl Function {
                 _ => {
                     return Err(InterpreterError::InvalidParameter {
                         name: format!("<{}>({})", extract_type(&arg), convert_to_string(&arg)),
-                    })
+                    });
                 }
             };
         }
@@ -70,3 +80,4 @@ impl Function {
         }
     }
 }
+
