@@ -80,6 +80,17 @@ impl Interpreter {
         col: &usize,
     ) -> IResult<Value> {
         match self.eval_expression(object)? {
+            Value::HASHMAP(hashmap) => {
+                if let Some(res) = hashmap.borrow().get(name) {
+                    Ok(*res.clone())
+                } else {
+                    Err(InterpreterError::UndefinedProperty { 
+                        name: name.into(), 
+                        line: *line, 
+                        col: *col 
+                    })
+                }
+            }
             Value::OBJECT(obj) => {
                 let rc = Rc::clone(&obj);
                 obj.borrow().get(name.clone(), *line, *col, rc)
@@ -120,6 +131,11 @@ impl Interpreter {
         value: &Expr,
     ) -> IResult<Value> {
         match self.eval_expression(object)? {
+            Value::HASHMAP(hashmap) => {
+                let val = self.eval_expression(value)?;
+                hashmap.borrow_mut().insert(name.into(), Box::new(val.clone()));
+                Ok(val)
+            }
             Value::OBJECT(obj) => {
                 let val = self.eval_expression(value)?;
                 obj.borrow_mut().set(name.clone(), &val);

@@ -51,7 +51,7 @@ pub fn convert_to_string(val: &Value) -> String {
         Value::CLASS(cls) => format!("<class {}>", cls.name()),
         Value::SUPER { class, .. } => format!("<super {}>", class.name()),
         Value::ARRAY(elements) => format_array(elements),
-        Value::HASHMAP(hashmap) => format_hashmap(hashmap),
+        Value::HASHMAP(hashmap) => format_hashmap(&hashmap.borrow()),
 
         Value::NativeFunction { name, .. } => format!("<native function {}>", name),
     }

@@ -27,7 +27,7 @@ pub enum Value {
     OBJECT(Rc<RefCell<Instance>>),
     SUPER { class: Class, instance: Rc<RefCell<Instance>> },
     ARRAY(Vec<Box<Value>>),
-    HASHMAP(HashMap<String, Box<Value>>),
+    HASHMAP(Rc<RefCell<HashMap<String, Box<Value>>>>),
 
     NativeFunction { name: String, func: NativeFn },
 

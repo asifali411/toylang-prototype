@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     errors::{interpreter_error::InterpreterError, lang_error::IResult},
@@ -24,7 +24,7 @@ impl Interpreter {
             let value = self.eval_expression(value)?;
             hashmap.insert(key.clone(), Box::new(value));
         }
-        Ok(Value::HASHMAP(hashmap))
+        Ok(Value::HASHMAP(Rc::new(RefCell::new(hashmap))))
     }
 
     pub(crate) fn eval_index(&mut self, object: &Box<Expr>, index: &Box<Expr>) -> IResult<Value> {
