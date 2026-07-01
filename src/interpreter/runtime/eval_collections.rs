@@ -15,7 +15,7 @@ impl Interpreter {
             items.push(Box::new(item));
         }
 
-        Ok(Value::ARRAY(items))
+        Ok(Value::ARRAY(Rc::new(RefCell::new(items))))
     }
 
     pub(crate) fn eval_hashmap(&mut self, fields: &Vec<(String, Box<Expr>)>) -> IResult<Value> {
@@ -35,19 +35,19 @@ impl Interpreter {
             Value::ARRAY(arr) => match index {
                 Value::NUM(n) => {
                     if n.is_finite() && n.fract() == 0.0 {
-                        let len_i = arr.len() as i64;
+                        let len_i = arr.borrow().len() as i64;
                         let n_i = n as i64;
 
                         let target_index = if n_i < 0 { len_i + n_i } else { n_i };
 
                         if target_index >= 0 && target_index < len_i {
-                            return Ok((*arr[target_index as usize]).clone());
+                            return Ok(*arr.borrow().get(target_index as usize).unwrap().clone());
                         } else {
                             return Err(InterpreterError::InvalidStatement {
                                 message: format!(
                                     "Array index {} out of bounds for length {}",
                                     n,
-                                    arr.len()
+                                    arr.borrow().len()
                                 ),
                             });
                         }
@@ -96,7 +96,7 @@ impl Interpreter {
             }
         };
 
-        let mut arr = match self.environment.borrow().get_var(&var_name, line, col) {
+        let arr = match self.environment.borrow().get_var(&var_name, line, col) {
             Some(Value::ARRAY(arr)) => arr,
             _ => {
                 return Err(InterpreterError::InvalidStatement {
@@ -107,18 +107,18 @@ impl Interpreter {
 
         match index {
             Value::NUM(n) if n.is_finite() && n.fract() == 0.0 => {
-                let len_i = arr.len() as i64;
+                let len_i = arr.borrow().len() as i64;
                 let n_i = n as i64;
                 let target_index = if n_i < 0 { len_i + n_i } else { n_i };
 
                 if target_index >= 0 && target_index < len_i {
-                    *arr[target_index as usize] = value;
+                    arr.borrow_mut()[target_index as usize] = Box::new(value);
                 } else {
                     return Err(InterpreterError::InvalidStatement {
                         message: format!(
                             "Array index {} out of bounds for length {}",
                             n_i,
-                            arr.len()
+                            arr.borrow().len()
                         ),
                     });
                 }
