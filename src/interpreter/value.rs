@@ -25,6 +25,7 @@ pub enum Value {
     FUNC(Function),
     CLASS(Class),
     OBJECT(Rc<RefCell<Instance>>),
+    SUPER { class: Class, instance: Rc<RefCell<Instance>> },
     ARRAY(Vec<Box<Value>>),
     HASHMAP(HashMap<String, Box<Value>>),
 
@@ -47,6 +48,16 @@ impl PartialEq for Value {
             (Value::FUNC(_), Value::FUNC(_)) => false,
             (Value::CLASS(_), Value::CLASS(_)) => false,
             (Value::OBJECT(a), Value::OBJECT(b)) => Rc::ptr_eq(a, b),
+            (
+                Value::SUPER {
+                    class: a_class,
+                    instance: a_instance,
+                },
+                Value::SUPER {
+                    class: b_class,
+                    instance: b_instance,
+                },
+            ) => a_class == b_class && Rc::ptr_eq(a_instance, b_instance),
             _ => false,
         }
     }

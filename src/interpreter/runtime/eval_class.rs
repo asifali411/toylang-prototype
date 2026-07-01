@@ -104,6 +104,9 @@ impl Interpreter {
                     })
                 }
             }
+            Value::SUPER { class, instance } => instance
+                .borrow()
+                .get_super(&class, name.clone(), *line, *col, Rc::clone(&instance)),
             _ => Err(InterpreterError::InvalidStatement {
                 message: "Only objects have properties".to_string(),
             }),
@@ -120,6 +123,11 @@ impl Interpreter {
             Value::OBJECT(obj) => {
                 let val = self.eval_expression(value)?;
                 obj.borrow_mut().set(name.clone(), &val);
+                Ok(val)
+            }
+            Value::SUPER { instance, .. } => {
+                let val = self.eval_expression(value)?;
+                instance.borrow_mut().set(name.clone(), &val);
                 Ok(val)
             }
             _ => Err(InterpreterError::InvalidStatement {

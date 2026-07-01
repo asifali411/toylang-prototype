@@ -88,6 +88,7 @@ impl Interpreter {
         match callee_value {
             Value::FUNC(func) => Ok(func.call(self, args)?),
             Value::CLASS(class) => Ok(class.call(self, args)?),
+            Value::SUPER { class, instance } => Ok(class.call_with_instance(self, instance, args)?),
             Value::NativeFunction { func, .. } => func(self, args),
             _ => Err(InterpreterError::UndefinedFunction {
                 name: format!("{:?}", callee),

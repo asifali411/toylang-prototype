@@ -38,12 +38,36 @@ impl Instance {
         Err(InterpreterError::UndefinedProperty { name, line, col })
     }
 
+    pub fn get_super(
+        &self,
+        superclass: &Class,
+        name: String,
+        line: usize,
+        col: usize,
+        this: Rc<RefCell<Instance>>,
+    ) -> IResult<Value> {
+        if let Some(value) = self.fields.get(&name) {
+            return Ok(value.clone());
+        }
+        if let Some(method) = superclass.find_method(&name) {
+            let bound = self.bind(method, this);
+            return Ok(Value::FUNC(bound));
+        }
+        Err(InterpreterError::UndefinedProperty { name, line, col })
+    }
+
     pub fn bind(&self, mut method: Function, this: Rc<RefCell<Instance>>) -> Function {
         if let Some(superclass) = &self.class.superclass {
             let super_env = Environment::new_enclosed(method.closure.clone());
             super_env
                 .borrow_mut()
-                .define_var("super", Value::CLASS(*superclass.clone()));
+                .define_var(
+                    "super",
+                    Value::SUPER {
+                        class: *superclass.clone(),
+                        instance: Rc::clone(&this),
+                    },
+                );
 
             let this_env = Environment::new_enclosed(super_env);
             this_env

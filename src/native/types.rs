@@ -49,6 +49,7 @@ pub fn convert_to_string(val: &Value) -> String {
         Value::OBJECT(obj) => format!("<instance of {}>", obj.borrow().class_name()),
         Value::FUNC(func) => format!("<function {}>", func.func_name()),
         Value::CLASS(cls) => format!("<class {}>", cls.name()),
+        Value::SUPER { class, .. } => format!("<super {}>", class.name()),
         Value::ARRAY(elements) => format_array(elements),
         Value::HASHMAP(hashmap) => format_hashmap(hashmap),
 
@@ -120,6 +121,7 @@ pub fn extract_type(val: &Value) -> String {
         Value::CLASS(_) => String::from("class"),
         Value::ARRAY(_) => String::from("array"),
         Value::HASHMAP(_) => String::from("hashmap"),
+        Value::SUPER { .. } => String::from("super"),
         Value::NativeFunction { .. } => String::from("function"),
     }
 }

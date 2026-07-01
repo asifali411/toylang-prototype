@@ -40,6 +40,25 @@ impl Class {
         Ok(Value::OBJECT(instance))
     }
 
+    pub fn call_with_instance(
+        &self,
+        interpreter: &mut Interpreter,
+        instance: Rc<RefCell<Instance>>,
+        arguments: Vec<Value>,
+    ) -> IResult<Value> {
+        if let Some(init) = self.find_method(&self.name) {
+            let func = instance.borrow().bind(init, Rc::clone(&instance));
+            let ret = func.call(interpreter, arguments)?;
+
+            if ret != Value::NULL {
+                return Err(InterpreterError::InvalidStatement {
+                    message: "Cannot return value from an initializer".to_string(),
+                });
+            }
+        }
+        Ok(Value::NULL)
+    }
+
     pub fn name(&self) -> &str {
         &self.name
     }
