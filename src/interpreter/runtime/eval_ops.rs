@@ -107,25 +107,20 @@ impl Interpreter {
     ) -> IResult<Value> {
         let change = self.eval_expression(value)?;
 
-        let current = if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
-            self.environment
-                .borrow()
-                .get_at(depth, name)
-                .ok_or_else(|| InterpreterError::UndefinedVariable {
-                    name: name.into(),
-                    line: op.span.line,
-                    col: op.span.column,
-                })?
-        } else {
-            self.environment
-                .borrow()
-                .get_var(name, op.span.line, op.span.column)
-                .ok_or_else(|| InterpreterError::UndefinedVariable {
-                    name: name.into(),
-                    line: op.span.line,
-                    col: op.span.column,
-                })?
-        };
+        let current = {
+            let env = self.environment.borrow();
+            if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
+                env.get_at(depth, name)
+                    .or_else(|| env.get_var(name, op.span.line, op.span.column))
+            } else {
+                env.get_var(name, op.span.line, op.span.column)
+            }
+        }
+        .ok_or_else(|| InterpreterError::UndefinedVariable {
+            name: name.into(),
+            line: op.span.line,
+            col: op.span.column,
+        })?;
 
         let new_val = match op.kind {
             TokenKind::PLUS_EQ => (current + change)?,
@@ -141,9 +136,10 @@ impl Interpreter {
         };
 
         if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
-            self.environment
-                .borrow_mut()
-                .assign_at(depth, name, new_val.clone());
+            let mut env = self.environment.borrow_mut();
+            if env.assign_at(depth, name, new_val.clone()).is_none() {
+                env.assign_var(name, new_val.clone(), op.span.line, op.span.column)?;
+            }
         } else {
             self.environment.borrow_mut().assign_var(
                 name,

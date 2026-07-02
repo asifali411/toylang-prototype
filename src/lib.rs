@@ -71,4 +71,3 @@ fn define_natives(env: &Env) {
             .define_var(name.clone(), Value::NativeFunction { name, func });
     }
 }
-

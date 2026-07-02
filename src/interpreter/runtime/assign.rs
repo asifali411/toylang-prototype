@@ -16,9 +16,10 @@ impl Interpreter {
     ) -> IResult<Value> {
         let value = self.eval_expression(value)?;
         if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
-            self.environment
-                .borrow_mut()
-                .assign_at(depth, name, value.clone());
+            let mut env = self.environment.borrow_mut();
+            if env.assign_at(depth, name, value.clone()).is_none() {
+                env.assign_var(name, value.clone(), *line, *col)?;
+            }
         } else {
             self.environment
                 .borrow_mut()
@@ -45,7 +46,10 @@ impl Interpreter {
         };
 
         if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
-            self.environment.borrow_mut().assign_at(depth, &name, value);
+            let mut env = self.environment.borrow_mut();
+            if env.assign_at(depth, &name, value.clone()).is_none() {
+                env.assign_var(&name, value, line, col)?;
+            }
         } else {
             self.environment
                 .borrow_mut()
@@ -63,7 +67,11 @@ impl Interpreter {
         col: usize,
     ) -> IResult<Value> {
         if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
-            if let Some(value) = self.environment.borrow().get_at(depth, name) {
+            let env = self.environment.borrow();
+            if let Some(value) = env.get_at(depth, name) {
+                return Ok(value);
+            }
+            if let Some(value) = env.get_var(name, line, col) {
                 return Ok(value);
             }
         }
