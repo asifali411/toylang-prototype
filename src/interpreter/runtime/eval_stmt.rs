@@ -120,25 +120,40 @@ impl Interpreter {
     }
 
     pub(crate) fn execute_loop_in_statement(
-        &mut self, 
-        name: &String, 
-        object: &Expr, 
-        body: &Box<Stmt>
+        &mut self,
+        name: &String,
+        object: &Expr,
+        body: &Box<Stmt>,
     ) -> Result<Value, Signal> {
-        match self.eval_expression(object).map_err(Signal::Error)? {
+        let value = self.eval_expression(object).map_err(Signal::Error)?;
+    
+        match value {
             Value::ARRAY(arr) => {
-                let arr = &*arr.borrow();
+                let env = Environment::new_enclosed(self.environment.clone());
+                let previous = std::mem::replace(&mut self.environment, env);
 
                 self.environment.borrow_mut().define_var(name, Value::NULL);
-                for i in 0..arr.len() {
-                    self.environment.borrow_mut().assign_var(name, *arr[i].clone(), 0, 0)?;
-                    self.execute_stmt(body)?;
+    
+                let len = arr.borrow().len();
+                let mut result = Ok(Value::NULL);
+    
+                for i in 0..len {
+                    let item = arr.borrow()[i].clone();
+                    if let Err(e) = self.environment.borrow_mut().assign_var(name, *item, 0, 0) {
+                        result = Err(Signal::Error(e));
+                        break;
+                    }
+                    result = self.execute_stmt(body);
+                    if result.is_err() {
+                        break;
+                    }
                 }
-            },
-            _ => return Err(Signal::Error(InterpreterError::UnexpectedExpr))
-        };
-
-        Ok(Value::NULL)
+    
+                self.environment = previous;
+                Ok(result?)
+            }
+            _ => Err(Signal::Error(InterpreterError::UnexpectedExpr)),
+        }
     }
 }
 

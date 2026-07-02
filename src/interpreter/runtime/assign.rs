@@ -63,8 +63,7 @@ impl Interpreter {
         col: usize,
     ) -> IResult<Value> {
         if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
-            // the reason why we find the variable at "depth + 1" instead of "depth" is because of a bug that i couldnt find the source of.
-            if let Some(value) = self.environment.borrow().get_at(depth + 1, name) {
+            if let Some(value) = self.environment.borrow().get_at(depth, name) {
                 return Ok(value);
             }
         }

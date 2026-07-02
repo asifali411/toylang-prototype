@@ -110,7 +110,7 @@ impl Interpreter {
         let current = if let Some(depth) = self.locals.get(&(expr as *const Expr)).copied() {
             self.environment
                 .borrow()
-                .get_at(depth + 1, name)
+                .get_at(depth, name)
                 .ok_or_else(|| InterpreterError::UndefinedVariable {
                     name: name.into(),
                     line: op.span.line,
