@@ -85,6 +85,7 @@ impl Interpreter {
             TokenKind::PLUS => left + right,
             TokenKind::MINUS => left - right,
             TokenKind::STAR => left * right,
+            TokenKind::MOD => Ok(left.modulo(&right)?),
             TokenKind::LESS => Ok(left.lt(&right)),
             TokenKind::LESS_EQ => Ok(left.lt_eq(&right)),
             TokenKind::GREAT => Ok(left.gt(&right)),

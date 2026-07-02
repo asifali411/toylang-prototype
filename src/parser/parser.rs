@@ -387,6 +387,7 @@ impl Parser {
             || self.compare(TokenKind::MINUS_EQ)
             || self.compare(TokenKind::STAR_EQ)
             || self.compare(TokenKind::SLASH_EQ)
+            || self.compare(TokenKind::MOD_EQ)
         {
             let op = self.advance_token()?;
             let value = self.assignment()?;
@@ -473,7 +474,7 @@ impl Parser {
 
         while let Some(op) = self.peek() {
             match op.kind {
-                TokenKind::STAR | TokenKind::SLASH => {
+                TokenKind::STAR | TokenKind::SLASH | TokenKind::MOD => {
                     let op = self.advance_token()?;
                     let right = self.unary()?;
                     expr = Expr::Binary {

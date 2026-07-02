@@ -115,6 +115,24 @@ impl Value {
     pub fn is_true(&self) -> bool {
         self == &Value::TRUE
     }
+
+    pub fn modulo(&self, value: &Value) -> IResult<Value> {
+        match (self, value) {
+            (Value::NUM(a), Value::NUM(b)) => Ok(Value::NUM(a % b)),
+            (a, b) => {
+                let a_type = extract_type(&a);
+                let b_type = extract_type(&b);
+                let a = convert_to_string(&a);
+                let b = convert_to_string(&b);
+
+                let message = format!(
+                    "Cannot mod <{}>({}) and <{}>({}) together",
+                    a_type, a, b_type, b
+                );
+                return Err(InterpreterError::ArithmeticError { message });
+            }
+        }
+    }
 }
 
 impl Add for Value {

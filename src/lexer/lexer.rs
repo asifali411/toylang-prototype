@@ -77,6 +77,14 @@ impl Lexer {
                 };
                 self.add_token(kind);
             }
+            '%' => {
+                let kind = if self.match_next('=') {
+                    TokenKind::MOD_EQ
+                } else {
+                    TokenKind::MOD
+                };
+                self.add_token(kind);
+            }
 
             '/' => {
                 if self.match_next('/') {
