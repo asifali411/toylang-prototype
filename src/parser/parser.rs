@@ -183,7 +183,21 @@ impl Parser {
                 TokenKind::OPEN_BRACE => self.block(),
                 TokenKind::IF => self.if_statement(),
                 TokenKind::LOOP => match self.peek_next() {
-                    Some(tok) if tok.kind == TokenKind::IF => self.loop_if_statement(),
+                    Some(tok) => {
+                        match &tok.kind {
+                            TokenKind::IF => return self.loop_if_statement(),
+                            TokenKind::IDENT(_) => {
+                                if let Some(in_tok) = self.peek_nth(2) {
+                                    if in_tok.kind == TokenKind::IN {
+                                        return self.loop_in_statement();
+                                    }
+                                }
+                            },
+                            _ => {}
+                        };
+
+                        self.loop_statement()
+                    }
                     _ => self.loop_statement(),
                 },
                 TokenKind::RETURN => self.return_statement(),
@@ -231,6 +245,30 @@ impl Parser {
         let count = self.expression()?;
         let body = Box::new(self.block()?);
         Ok(Stmt::Loop { count, body })
+    }
+
+    fn loop_in_statement(&mut self) -> PResult<Stmt> {
+        self.advance();
+
+        let name = match self.peek() {
+            Some(tok) => match &tok.kind {
+                TokenKind::IDENT(v) => v.clone(),
+                _ => {
+                    return Err(ParseError::ExpectedName {
+                        keyword: "loop",
+                        line: tok.span.line,
+                        col: tok.span.column,
+                    });
+                }
+            },
+            None => return Err(ParseError::UnexpectedEof),
+        };
+        self.advance();
+        self.consume(TokenKind::IN, "Expect 'in' after identifier")?;
+        let object = self.expression()?;
+        let body = Box::new(self.block()?);
+
+        Ok(Stmt::LoopIn { name, object, body })
     }
 
     fn return_statement(&mut self) -> PResult<Stmt> {
@@ -607,6 +645,12 @@ impl Parser {
     fn peek_next(&self) -> Option<&Token> {
         self.tokens
             .get(self.current + 1)
+            .filter(|t| t.kind != TokenKind::EOF)
+    }
+
+    fn peek_nth(&self, n: usize) -> Option<&Token> {
+        self.tokens
+            .get(self.current + n)
             .filter(|t| t.kind != TokenKind::EOF)
     }
 

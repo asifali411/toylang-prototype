@@ -250,6 +250,7 @@ impl Lexer {
             "return" => Some(TokenKind::RETURN),
             "class" => Some(TokenKind::CLASS),
             "inherit" => Some(TokenKind::INHERIT),
+            "in" => Some(TokenKind::IN),
             _ => None,
         }
     }

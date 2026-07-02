@@ -41,6 +41,7 @@ pub enum TokenKind {
     RETURN,
     CLASS,
     INHERIT,
+    IN,
 
     PLUS,
     MINUS,

@@ -1,12 +1,10 @@
 use crate::{
-    errors::interpreter_error::InterpreterError,
-    interpreter::{
+    errors::{interpreter_error::InterpreterError}, interpreter::{
         Interpreter,
         environment::{Env, Environment},
         signal::Signal,
         value::Value,
-    },
-    parser::{expression::Expr, statement::Stmt},
+    }, parser::{expression::Expr, statement::Stmt},
 };
 
 impl Interpreter {
@@ -26,6 +24,7 @@ impl Interpreter {
             } => self.execute_if_statement(condition, if_body, else_body),
             Stmt::Loop { count, body } => self.execute_loop_statement(count, body),
             Stmt::LoopIf { condition, body } => self.execute_loop_if_statement(condition, body),
+            Stmt::LoopIn { name, object, body } => self.execute_loop_in_statement(name, object, body),
             Stmt::Func {
                 name,
                 parameters,
@@ -117,6 +116,28 @@ impl Interpreter {
         {
             self.execute_stmt(body)?;
         }
+        Ok(Value::NULL)
+    }
+
+    pub(crate) fn execute_loop_in_statement(
+        &mut self, 
+        name: &String, 
+        object: &Expr, 
+        body: &Box<Stmt>
+    ) -> Result<Value, Signal> {
+        match self.eval_expression(object).map_err(Signal::Error)? {
+            Value::ARRAY(arr) => {
+                let arr = &*arr.borrow();
+
+                self.environment.borrow_mut().define_var(name, Value::NULL);
+                for i in 0..arr.len() {
+                    self.environment.borrow_mut().assign_var(name, *arr[i].clone(), 0, 0)?;
+                    self.execute_stmt(body)?;
+                }
+            },
+            _ => return Err(Signal::Error(InterpreterError::UnexpectedExpr))
+        };
+
         Ok(Value::NULL)
     }
 }

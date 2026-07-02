@@ -22,6 +22,11 @@ pub enum Stmt {
         condition: Expr,
         body: Box<Stmt>, // expect Block
     },
+    LoopIn {
+        name: String,
+        object: Expr,
+        body: Box<Stmt>,
+    },
     Func {
         name: String,
         parameters: Vec<Token>,

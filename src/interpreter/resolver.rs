@@ -142,6 +142,22 @@ impl Resolver {
                 self.resolve_stmt(body);
             }
 
+            Stmt::LoopIn {
+                name,
+                object, 
+                body,
+            } => {
+                self.begin_scope();
+
+                self.declare(name);
+                self.define(name);
+
+                self.resolve_expr(object);
+                self.resolve_stmt(body);
+                
+                self.end_scope();
+            }
+
             Stmt::Expr(e) => self.resolve_expr(e),
         }
     }
