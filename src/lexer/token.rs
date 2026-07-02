@@ -42,6 +42,8 @@ pub enum TokenKind {
     CLASS,
     INHERIT,
     IN,
+    BREAK,
+    CONTINUE,
 
     PLUS,
     MINUS,

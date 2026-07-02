@@ -31,6 +31,7 @@ impl Interpreter {
             Ok(v) => Ok(v),
             Err(Signal::Error(e)) => Err(e),
             Err(Signal::Return(v)) => Ok(v),
+            Err(Signal::Break) | Err(Signal::Continue) => Ok(Value::NULL),
         }
     }
 

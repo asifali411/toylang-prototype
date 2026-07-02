@@ -120,6 +120,8 @@ impl Resolver {
 
             Stmt::Return(expr) => self.resolve_expr(expr),
 
+            Stmt::Break | Stmt::Continue => {},
+
             Stmt::If {
                 condition,
                 if_body,

@@ -33,6 +33,8 @@ pub enum Stmt {
         body: Rc<Stmt>, // expect Block
     },
     Return(Expr),
+    Break,
+    Continue,
     Class {
         name: String,
         methods: Vec<Stmt>,

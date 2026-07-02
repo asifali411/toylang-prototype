@@ -77,6 +77,9 @@ impl Function {
             Err(Signal::Return(_)) if self.is_init => Ok(Value::NULL),
             Err(Signal::Return(value)) => Ok(value),
             Err(Signal::Error(e)) => Err(e),
+            Err(Signal::Break) | Err(Signal::Continue) => Err(InterpreterError::InvalidStatement { 
+                message: "break and continue statements can only be used within a loop".into()
+            }),
         }
     }
 }

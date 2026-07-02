@@ -201,6 +201,16 @@ impl Parser {
                     _ => self.loop_statement(),
                 },
                 TokenKind::RETURN => self.return_statement(),
+                TokenKind::BREAK => {
+                    self.advance();
+                    self.consume(TokenKind::SEMI, "Expect ';' after break statement")?;
+                    Ok(Stmt::Break)
+                },
+                TokenKind::CONTINUE => {
+                    self.advance();
+                    self.consume(TokenKind::SEMI, "Expect ';' after continue statement")?;
+                    Ok(Stmt::Continue)
+                }
                 _ => self.expression_statement(),
             },
             None => Err(ParseError::UnexpectedEof),

@@ -251,6 +251,8 @@ impl Lexer {
             "class" => Some(TokenKind::CLASS),
             "inherit" => Some(TokenKind::INHERIT),
             "in" => Some(TokenKind::IN),
+            "break" => Some(TokenKind::BREAK),
+            "continue" => Some(TokenKind::CONTINUE),
             _ => None,
         }
     }

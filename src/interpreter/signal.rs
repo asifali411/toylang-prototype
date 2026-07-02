@@ -4,6 +4,8 @@ use crate::{errors::interpreter_error::InterpreterError, interpreter::value::Val
 pub enum Signal {
     Return(Value),
     Error(InterpreterError),
+    Break,
+    Continue,
 }
 
 impl From<InterpreterError> for Signal {

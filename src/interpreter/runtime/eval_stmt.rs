@@ -35,7 +35,9 @@ impl Interpreter {
             Stmt::Return(expr) => {
                 let value = self.eval_expression(expr).map_err(Signal::Error)?;
                 Err(Signal::Return(value))
-            }
+            },
+            Stmt::Break => Err(Signal::Break),
+            Stmt::Continue => Err(Signal::Continue),
             Stmt::Class {
                 name,
                 methods,
@@ -98,7 +100,14 @@ impl Interpreter {
         };
 
         for _ in 0..count {
-            self.execute_stmt(body)?;
+            let res = self.execute_stmt(body);
+            match res {
+                Ok(_) => {},
+                Err(Signal::Error(e)) => return Err(Signal::Error(e)),
+                Err(Signal::Return(v)) => return Err(Signal::Return(v)),
+                Err(Signal::Break) => break,
+                Err(Signal::Continue) => continue,
+            };
         }
 
         Ok(Value::NULL)
