@@ -97,5 +97,36 @@ impl Interpreter {
             }),
         }
     }
+
+    pub(crate) fn eval_is_in_expr(&self, left: &Value, right: &Value) -> IResult<Value> {
+        match right {
+            Value::ARRAY(arr) => {
+                for elem in arr.borrow().iter() {
+                    if **elem == *left {
+                        return Ok(Value::TRUE);
+                    }
+                }
+
+                Ok(Value::FALSE)
+            },
+            Value::HASHMAP(hashmap) => {
+                match left {
+                    Value::STRING(name) => {
+                        if let Some(_) = hashmap.borrow().get(name) {
+                            Ok(Value::TRUE)
+                        } else {
+                            Ok(Value::FALSE)
+                        }
+                    },
+                    _ => Err(InterpreterError::InvalidStatement { 
+                        message: "Expect key name".into() 
+                    })
+                }
+            }
+            _ => Err(InterpreterError::InvalidStatement { 
+                message: "'in' operation can only be used in arrays and hashmaps".into() 
+            }),
+        }
+    }
 }
 

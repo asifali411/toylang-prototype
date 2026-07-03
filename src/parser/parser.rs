@@ -480,7 +480,9 @@ impl Parser {
 
         while let Some(op) = self.peek() {
             match op.kind {
-                TokenKind::LESS | TokenKind::GREAT | TokenKind::LESS_EQ | TokenKind::GREAT_EQ => {
+                TokenKind::LESS | TokenKind::GREAT 
+                | TokenKind::LESS_EQ | TokenKind::GREAT_EQ
+                | TokenKind::IN => {
                     let op = self.advance_token()?;
                     let right = self.term()?;
                     expr = Expr::Binary {

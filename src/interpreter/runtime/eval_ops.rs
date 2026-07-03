@@ -92,6 +92,7 @@ impl Interpreter {
             TokenKind::GREAT_EQ => Ok(left.gt_eq(&right)),
             TokenKind::EQ_EQ => Ok(left.eq(&right)),
             TokenKind::NOT_EQ => Ok(left.not_eq(&right)),
+            TokenKind::IN => Ok(self.eval_is_in_expr(&left, &right)?),
             ref kind => return Err(InterpreterError::UnsupportedBinaryOp { op: kind.clone() }),
         };
 
