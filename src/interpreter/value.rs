@@ -133,6 +133,36 @@ impl Value {
             }
         }
     }
+
+    pub fn and(&self, value: &Value) -> IResult<Value> {
+        if (*self == Value::TRUE || *self == Value::FALSE) &&
+        (*value == Value::TRUE || *value == Value::FALSE) {
+            if self.is_true() && value.is_true() {
+                Ok(Value::TRUE)
+            } else {
+                Ok(Value::FALSE)
+            }
+        } else {
+            Err(InterpreterError::InvalidStatement { 
+                message: "'and' operation can only be done between boolean values".into() 
+            })
+        }
+    }
+
+    pub fn or(&self, value: &Value) -> IResult<Value> {
+        if (*self == Value::TRUE || *self == Value::FALSE) &&
+        (*value == Value::TRUE || *value == Value::FALSE) {
+            if self.is_true() || value.is_true() {
+                Ok(Value::TRUE)
+            } else {
+                Ok(Value::FALSE)
+            }
+        } else {
+            Err(InterpreterError::InvalidStatement { 
+                message: "'or' operation can only be done between boolean values".into() 
+            })
+        }
+    }
 }
 
 impl Add for Value {

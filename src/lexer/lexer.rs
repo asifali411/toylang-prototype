@@ -142,6 +142,9 @@ impl Lexer {
                 self.add_token(kind);
             }
 
+            '&' => self.add_token(TokenKind::AND),
+            '|' => self.add_token(TokenKind::OR),
+            
             c if c.is_ascii_digit() => self.scan_number()?,
             c if c.is_ascii_alphabetic() || c == '_' => self.scan_identifier(),
 
@@ -279,6 +282,8 @@ impl Lexer {
             "in" => Some(TokenKind::IN),
             "break" => Some(TokenKind::BREAK),
             "continue" => Some(TokenKind::CONTINUE),
+            "and" => Some(TokenKind::AND),
+            "or" => Some(TokenKind::OR),
             _ => None,
         }
     }

@@ -93,6 +93,8 @@ impl Interpreter {
             TokenKind::EQ_EQ => Ok(left.eq(&right)),
             TokenKind::NOT_EQ => Ok(left.not_eq(&right)),
             TokenKind::IN => Ok(self.eval_is_in_expr(&left, &right)?),
+            TokenKind::AND => Ok(left.and(&right)?),
+            TokenKind::OR => Ok(left.or(&right)?),
             ref kind => return Err(InterpreterError::UnsupportedBinaryOp { op: kind.clone() }),
         };
 

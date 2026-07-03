@@ -69,6 +69,9 @@ pub enum TokenKind {
     EQ_EQ,
     NOT_EQ,
 
+    AND,
+    OR,
+
     OPEN_PAREN,
     CLOSE_PAREN,
     OPEN_BRACE,

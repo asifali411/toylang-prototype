@@ -455,11 +455,32 @@ impl Parser {
     }
 
     fn equality(&mut self) -> PResult<Expr> {
-        let mut expr = self.comparison()?;
+        let mut expr = self.logical()?;
 
         while let Some(op) = self.peek() {
             match op.kind {
                 TokenKind::NOT_EQ | TokenKind::EQ_EQ => {
+                    let op = self.advance_token()?;
+                    let right = self.logical()?;
+                    expr = Expr::Binary {
+                        left: Box::new(expr),
+                        operator: op,
+                        right: Box::new(right),
+                    };
+                }
+                _ => break,
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn logical(&mut self) -> PResult<Expr> {
+        let mut expr = self.comparison()?;
+
+        while let Some(op) = self.peek() {
+            match op.kind {
+                TokenKind::AND | TokenKind::OR => {
                     let op = self.advance_token()?;
                     let right = self.comparison()?;
                     expr = Expr::Binary {
