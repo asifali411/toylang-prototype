@@ -1,4 +1,6 @@
+<center>
 <img src="./assets/banner.png">
+</center>
 
 # ToyLang 
 ![prototype](https://img.shields.io/badge/prototype-orange?style=for-the-badge)

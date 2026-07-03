@@ -91,6 +91,8 @@ impl Lexer {
                     while self.peek() != '\n' && !self.is_at_end() {
                         self.advance();
                     }
+                } else if self.match_next('*') {
+                    self.skip_comment()?;
                 } else if self.match_next('=') {
                     self.add_token(TokenKind::SLASH_EQ);
                 } else {
@@ -233,6 +235,30 @@ impl Lexer {
 
         self.advance();
         self.add_token(TokenKind::STRING(value));
+        Ok(())
+    }
+
+    fn skip_comment(&mut self) -> LResult<()> {
+        loop {
+            if self.is_at_end() {
+                return Err(LexError::ExpectedCharacter { 
+                    message: format!("unterminated multiline comment"), 
+                    line: self.line, 
+                    col: self.column 
+                });
+            }
+
+            if self.peek() == '*' && self.peek_next() == '/' {
+                self.advance();
+                self.advance();
+                break;
+            }
+            let c = self.advance();
+            if c == '\n' { self.column = 1; }
+        }
+        
+
+
         Ok(())
     }
 
