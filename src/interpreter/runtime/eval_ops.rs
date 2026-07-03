@@ -129,6 +129,7 @@ impl Interpreter {
             TokenKind::PLUS_EQ => (current + change)?,
             TokenKind::MINUS_EQ => (current - change)?,
             TokenKind::STAR_EQ => (current * change)?,
+            TokenKind::MOD_EQ => (current.modulo(&change))?,
             TokenKind::SLASH_EQ => {
                 if matches!(change, Value::NUM(0.0)) {
                     return Err(InterpreterError::DivisionByZero);

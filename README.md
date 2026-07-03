@@ -93,8 +93,8 @@ Variable shadowing is allowed (re-declaring a variable in the same scope overwri
 |------------|--------------------------------|
 | Arithmetic | `+` `-` `*` `/` `%`            |
 | Comparison | `<` `>` `<=` `>=` `==` `!=`    |
-| Logical    | `&&` `\|\|` `!`                |
-| Assignment | `=`                            |
+| Logical    | `(& / and)` `(\| / or)` `!`    |
+| Assignment | `=` `+=` `-=` `/=` `*=` `%=`   |
 
 > [!NOTE]
 > `+` is also used for string concatenation, e.g. `"Hai, " + name`.
