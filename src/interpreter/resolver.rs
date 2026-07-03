@@ -189,6 +189,9 @@ impl Resolver {
             Expr::Unary { right, .. } | Expr::Group { expr: right } => {
                 self.resolve_expr(right);
             }
+            Expr::PostUnary { left, .. } => {
+                self.resolve_expr(left);
+            }
             Expr::Call {
                 callee, arguments, ..
             } => {

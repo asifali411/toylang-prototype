@@ -100,14 +100,13 @@ impl Interpreter {
         };
 
         for _ in 0..count {
-            let res = self.execute_stmt(body);
-            match res {
+            match self.execute_stmt(body) {
                 Ok(_) => {},
-                Err(Signal::Error(e)) => return Err(Signal::Error(e)),
-                Err(Signal::Return(v)) => return Err(Signal::Return(v)),
                 Err(Signal::Break) => break,
                 Err(Signal::Continue) => continue,
-            };
+                Err(Signal::Error(e)) => return Err(Signal::Error(e)),
+                Err(Signal::Return(v)) => return Err(Signal::Return(v)),
+            }
         }
 
         Ok(Value::NULL)
@@ -123,7 +122,13 @@ impl Interpreter {
             .map_err(Signal::Error)?
             .is_true()
         {
-            self.execute_stmt(body)?;
+            match self.execute_stmt(body) {
+                Ok(_) => {},
+                Err(Signal::Break) => break,
+                Err(Signal::Continue) => continue,
+                Err(Signal::Error(e)) => return Err(Signal::Error(e)),
+                Err(Signal::Return(v)) => return Err(Signal::Return(v)),
+            }
         }
         Ok(Value::NULL)
     }
@@ -152,9 +157,12 @@ impl Interpreter {
                         result = Err(Signal::Error(e));
                         break;
                     }
-                    result = self.execute_stmt(body);
-                    if result.is_err() {
-                        break;
+                    match self.execute_stmt(body) {
+                        Ok(_) => {},
+                        Err(Signal::Break) => break,
+                        Err(Signal::Continue) => continue,
+                        Err(Signal::Error(e)) => return Err(Signal::Error(e)),
+                        Err(Signal::Return(v)) => return Err(Signal::Return(v)),
                     }
                 }
     
