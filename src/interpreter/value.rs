@@ -142,6 +142,8 @@ impl Add for Value {
         let res = match (self, rhs) {
             (Value::NUM(a), Value::NUM(b)) => Value::NUM(a + b),
             (Value::STRING(a), Value::STRING(b)) => Value::STRING(format!("{}{}", a, b)),
+            (Value::STRING(a), Value::NUM(b)) => Value::STRING(format!("{}{}", a, b)),
+            (Value::NUM(a), Value::STRING(b)) => Value::STRING(format!("{}{}", a, b)),
             (a, b) => {
                 let a_type = extract_type(&a);
                 let b_type = extract_type(&b);

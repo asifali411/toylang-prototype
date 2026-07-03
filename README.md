@@ -40,18 +40,22 @@ Variable shadowing is allowed (re-declaring a variable in the same scope overwri
 ### Comments
 
 ```
-// this is a comment
+// this is a single line comment
+/* 
+    this is a multi line comment.
+*/
 ```
 
 ### Built-in Functions
 
-| Function | Description |
-|---|---|
-| `output(value)` | Print a value to the console |
-| `input(prompt)` | Read a line of input from the user |
-| `number(value)` | Convert a value to a number |
-| `string(value)` | Convert a value to a string |
-| `boolean(value)` | Convert a value to a boolean |
+| Function         | Description                        |
+|------------------|------------------------------------|
+| `output(value)`  | Print a value to the console       |
+| `input(prompt)`  | Read a line of input from the user |
+| `number(value)`  | Convert a value to a number        |
+| `string(value)`  | Convert a value to a string        |
+| `boolean(value)` | Convert a value to a boolean       |
+| `type(value)`    | Extract type of a value            |
 
 ### Functions
 
@@ -89,6 +93,11 @@ loop 6 {
 
 // Loops if the condition is true
 loop if i > 10 {
+    // ...
+}
+
+// Loop through array
+loop i in [10, 9, 8, 7, 6] {
     // ...
 }
 ```
@@ -215,8 +224,6 @@ This rewrite will significantly improve performance.
 ### Planned Language Features
 
 - String interpolation: `"Hello, {name}"`
-- Property access on hashmaps: `hashmap.name` and `hashmap["name"]`
-- Iterator-style loops: `loop i in array { }`
 - Improved error messages
 
 ---
