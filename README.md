@@ -2,13 +2,36 @@
 <img src="./assets/banner.png">
 </center>
 
-# ToyLang 
+# ToyLang
 ![prototype](https://img.shields.io/badge/prototype-orange?style=for-the-badge)
 
 A simple, readable, dynamically typed programming language.
 
 > [!NOTE]
 > Currently implemented as a tree-walking interpreter written in **Rust**. A future rewrite in **C with bytecode compilation** is planned for better performance.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Syntax Overview](#syntax-overview)
+  - [Variables](#variables)
+  - [Comments](#comments)
+  - [Operators](#operators)
+  - [Built-in Functions](#built-in-functions)
+  - [Functions](#functions)
+  - [Control Flow](#control-flow)
+  - [Loops](#loops)
+  - [Classes & Inheritance](#classes--inheritance)
+  - [Arrays](#arrays)
+  - [Hashmaps](#hashmaps)
+  - [Null](#null)
+- [Types](#types)
+- [Example Program](#example-program)
+- [Project Status](#project-status)
+- [Inspiration](#inspiration)
 
 ---
 
@@ -20,6 +43,24 @@ A simple, readable, dynamically typed programming language.
 - Arrays and hashmaps
 - Built-in I/O functions
 - `loop` keyword unifying counted and conditional loops
+
+---
+
+## Installation
+
+ToyLang source files use the `.toy` extension.
+
+```bash
+# Clone the repository
+git clone https://github.com/asifali411/toylang-prototype.git
+cd toylang
+
+# Build with Cargo
+cargo build --release
+
+# Run a ToyLang program
+cargo run -- path/to/program.toy
+```
 
 ---
 
@@ -35,16 +76,28 @@ var age = 18;
 Variable shadowing is allowed (re-declaring a variable in the same scope overwrites it).
 
 > [!WARNING]
-> Variable shadowing will be **removed** in the future updates.
+> Variable shadowing will be **removed** in future updates.
 
 ### Comments
 
 ```
 // this is a single line comment
 /* 
-    this is a multi line comment.
+    this is a multi line comment
 */
 ```
+
+### Operators
+
+| Category   | Operators                      |
+|------------|--------------------------------|
+| Arithmetic | `+` `-` `*` `/` `%`            |
+| Comparison | `<` `>` `<=` `>=` `==` `!=`    |
+| Logical    | `&&` `\|\|` `!`                |
+| Assignment | `=`                            |
+
+> [!NOTE]
+> `+` is also used for string concatenation, e.g. `"Hai, " + name`.
 
 ### Built-in Functions
 
@@ -98,7 +151,7 @@ loop if i > 10 {
 
 // Loop through array
 loop i in [10, 9, 8, 7, 6] {
-    // ...
+    output(i);
 }
 ```
 
@@ -145,6 +198,9 @@ student1.display();
 
 ```
 var array = [1, 2, 3, 4, 5];
+
+// Access by index
+output(array[0]);
 ```
 
 ### Hashmaps
@@ -154,6 +210,9 @@ var hashmap = {
     name: "Spongebob",
     age: 79,
 };
+
+// Access by key
+output(hashmap.name);
 ```
 
 ### Null
@@ -174,6 +233,9 @@ ToyLang is **dynamically typed**. The following types are supported:
 - `null` — absence of a value
 
 Use the built-in conversion functions (`number()`, `string()`, `boolean()`) to explicitly convert between types.
+
+> [!WARNING]
+> ToyLang does not have error handling (no try/catch). Invalid operations (e.g. type mismatches, undefined variables) will cause the interpreter to crash.
 
 ---
 
