@@ -50,10 +50,26 @@ A simple, readable, dynamically typed programming language.
 
 ToyLang source files use the `.toy` extension.
 
+### Quick install
+
+On macOS and Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/asifali411/toylang-prototype/main/scripts/install.sh | sh
+```
+
+On Windows PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/asifali411/toylang-prototype/main/scripts/install.ps1 | iex
+```
+
+### Build from source
+
 ```bash
 # Clone the repository
 git clone https://github.com/asifali411/toylang-prototype.git
-cd toylang
+cd toylang-prototype
 
 # Build with Cargo
 cargo build --release
