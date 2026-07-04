@@ -93,7 +93,11 @@ impl Interpreter {
     ) -> Result<Value, Signal> {
         let count = match self.eval_expression(count).map_err(Signal::Error)? {
             Value::NUM(c) => {
-                //TODO: handle negative and floating point numbers
+                if c < 0.0 || c.fract() != 0.0 {
+                    return Err(Signal::Error(InterpreterError::InvalidStatement { 
+                        message: "loop count must be a non-negative integer".into() 
+                    }));
+                }
                 c as usize
             }
             _ => return Err(Signal::Error(InterpreterError::UnexpectedExpr)),
