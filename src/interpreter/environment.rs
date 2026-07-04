@@ -9,8 +9,6 @@ pub type Env = Rc<RefCell<Environment>>;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
     variables: HashMap<String, Value>,
-    functions: HashMap<String, Function>,
-    classes: HashMap<String, Class>,
     enclosing: Option<Env>,
 }
 
@@ -18,8 +16,6 @@ impl Environment {
     pub fn new() -> Env {
         Rc::new(RefCell::new(Self {
             variables: HashMap::new(),
-            functions: HashMap::new(),
-            classes: HashMap::new(),
             enclosing: None,
         }))
     }
@@ -27,8 +23,6 @@ impl Environment {
     pub fn new_enclosed(enclosing: Env) -> Env {
         Rc::new(RefCell::new(Self {
             variables: HashMap::new(),
-            functions: HashMap::new(),
-            classes: HashMap::new(),
             enclosing: Some(enclosing),
         }))
     }
@@ -98,12 +92,11 @@ impl Environment {
 
     pub fn define_func(&mut self, name: impl Into<String>, func: Function) {
         let name = name.into();
-        self.functions.insert(name.clone(), func.clone());
         self.variables.insert(name, Value::FUNC(func));
     }
 
     pub fn get_func(&self, name: &str) -> Option<Function> {
-        if let Some(func) = self.functions.get(name) {
+        if let Some(Value::FUNC(func)) = self.variables.get(name) {
             return Some(func.clone());
         }
 
@@ -116,12 +109,11 @@ impl Environment {
 
     pub fn define_class(&mut self, name: impl Into<String>, class: Class) {
         let name = name.into();
-        self.classes.insert(name.clone(), class.clone());
         self.variables.insert(name, Value::CLASS(class));
     }
 
     pub fn get_class(&self, name: &str) -> Option<Class> {
-        if let Some(class) = self.classes.get(name) {
+        if let Some(Value::CLASS(class)) = self.variables.get(name) {
             return Some(class.clone());
         }
 
