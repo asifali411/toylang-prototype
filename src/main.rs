@@ -9,7 +9,23 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     }
 
-    let content = fs::read_to_string(path.unwrap());
+    let path = path.unwrap();
+
+    if path.starts_with('-') {
+        match &path[..] {
+            "--version" | "-v" => {
+                let version = env!("CARGO_PKG_VERSION");
+                println!("v{}", version);
+                return ExitCode::SUCCESS;
+            }
+            _ => {
+                eprintln!("cannot find command '{}'", path);
+                return ExitCode::FAILURE;
+            }
+        }
+    }
+
+    let content = fs::read_to_string(path);
 
     match content {
         Ok(source) => toylang::run(source),

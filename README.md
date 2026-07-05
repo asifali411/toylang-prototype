@@ -1,5 +1,5 @@
 <center>
-<img src="./assets/banner.png">
+<img src="./public/banner.png" alt="banner" width="100%">
 </center>
 
 # ToyLang
